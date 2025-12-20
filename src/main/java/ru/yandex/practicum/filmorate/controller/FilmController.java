@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.controller;
 
-
 import lombok.extern.slf4j.Slf4j;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -26,8 +25,10 @@ public class FilmController {
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film) {
         validateReleaseDate(film.getReleaseDate());
+
         film.setId(nextId++);
         films.put(film.getId(), film);
+
         log.info("Добавлен фильм: {}", film);
         return film;
     }
@@ -38,8 +39,10 @@ public class FilmController {
             log.warn("Фильм не найден: id={}", film.getId());
             throw new ValidationException("Фильм не найден");
         }
+
         validateReleaseDate(film.getReleaseDate());
         films.put(film.getId(), film);
+
         log.info("Обновлён фильм: {}", film);
         return film;
     }
