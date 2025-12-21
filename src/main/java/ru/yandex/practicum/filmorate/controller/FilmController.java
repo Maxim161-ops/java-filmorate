@@ -32,7 +32,7 @@ public class FilmController {
         log.info("Добавлен фильм: {}", film);
         return film;
     }
-
+    //1
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film) {
         if (!films.containsKey(film.getId())) {
