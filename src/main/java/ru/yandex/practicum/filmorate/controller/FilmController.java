@@ -1,6 +1,8 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 
@@ -29,7 +31,7 @@ public class FilmController {
         film.setId(nextId++);
         films.put(film.getId(), film);
 
-        log.info("Добавлен фильм: {}", film);
+        log.info("Добавлен фильм: id={}, name={}", film.getId(), film.getName());
         return film;
     }
 
@@ -37,7 +39,7 @@ public class FilmController {
     public Film updateFilm(@Valid @RequestBody Film film) {
         if (!films.containsKey(film.getId())) {
             log.warn("Фильм не найден: id={}", film.getId());
-            throw new ValidationException("Фильм не найден");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Фильм не найден");
         }
 
         validateReleaseDate(film.getReleaseDate());
@@ -49,6 +51,7 @@ public class FilmController {
 
     @GetMapping
     public Collection<Film> getAllFilms() {
+        log.info("Получен запрос на получение всех фильмов. Количество: {}", films.size());
         return films.values();
     }
 
@@ -56,6 +59,10 @@ public class FilmController {
         if (date.isBefore(CINEMA_BIRTHDAY)) {
             log.error("Некорректная дата релиза: {}", date);
             throw new ValidationException("Дата релиза не может быть раньше 28.12.1895");
+        }
+        if (date.isAfter(LocalDate.now())) {
+            log.error("Некорректная дата релиза (в будущем): {}", date);
+            throw new ValidationException("Дата релиза не может быть в будущем");
         }
     }
 }
