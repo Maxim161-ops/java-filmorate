@@ -87,6 +87,9 @@ public class FilmServiceImpl implements FilmService {
     }
 
     private void validateReleaseDate(Film film) {
+        if (film.getReleaseDate() == null) {
+            throw new ValidationException("Дата релиза обязательна");
+        }
         if (film.getReleaseDate().isBefore(CINEMA_BIRTHDAY)) {
             throw new ValidationException(
                     "Дата релиза не может быть раньше 28.12.1895"
