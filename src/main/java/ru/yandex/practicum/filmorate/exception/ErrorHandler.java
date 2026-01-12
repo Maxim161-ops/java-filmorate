@@ -34,7 +34,7 @@ public class ErrorHandler {
         );
     }
 
-    // 400 — ошибка валидации для @Valid, Spring кидает MethodArgumentNotValidException
+    // 400 — ошибка валидации для @Valid
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleValidation(MethodArgumentNotValidException e) {

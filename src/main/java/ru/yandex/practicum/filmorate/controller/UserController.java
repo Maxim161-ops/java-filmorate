@@ -18,11 +18,13 @@ public class UserController {
     public UserController(UserService userService) {
         this.userService = userService;
     }
+
     // логика в сервисе
     @PostMapping
     public User createUser(@Valid @RequestBody User user) {
         return userService.create(user);
     }
+
     // логика в сервисе
     @PutMapping
     public User updateUser(@Valid @RequestBody User user) {
