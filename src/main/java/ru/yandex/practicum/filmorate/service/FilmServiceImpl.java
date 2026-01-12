@@ -2,15 +2,19 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
 
 @Slf4j
 @Service
 public class FilmServiceImpl implements FilmService {
+
+    private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
 
     private final FilmStorage filmStorage;
     private final UserService userService;
@@ -22,6 +26,7 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Film create(Film film) {
+        validateReleaseDate(film); // Проверка даты перед созданием
         Film created = filmStorage.create(film);
         log.info("Создан фильм: id={}, name={}", created.getId(), created.getName());
         return created;
@@ -29,8 +34,8 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Film update(Film film) {
-        Film existingFilm = filmStorage.findById(film.getId());
-
+        validateReleaseDate(film); // Проверка даты перед обновлением
+        filmStorage.findById(film.getId()); // проверка существования фильма
         Film updated = filmStorage.update(film);
         log.info("Обновлён фильм: id={}, name={}", updated.getId(), updated.getName());
         return updated;
@@ -53,13 +58,9 @@ public class FilmServiceImpl implements FilmService {
     public void addLike(int filmId, int userId) {
         Film film = findById(filmId);
         userService.findById(userId); // проверка существования пользователя
-
         boolean added = film.getLikes().add(userId);
-
         if (added) {
             log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
-        } else {
-            log.info("Пользователь {} уже ставил лайк фильму {}", userId, filmId);
         }
     }
 
@@ -69,7 +70,6 @@ public class FilmServiceImpl implements FilmService {
         userService.findById(userId);
 
         boolean removed = film.getLikes().remove(userId);
-
         if (removed) {
             log.info("Пользователь {} удалил лайк у фильма {}", userId, filmId);
         } else {
@@ -80,10 +80,17 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public Collection<Film> getPopular(int count) {
         log.debug("Запрошен список популярных фильмов, count={}", count);
-
         return filmStorage.findAll().stream()
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
                 .limit(count)
                 .toList();
+    }
+
+    private void validateReleaseDate(Film film) {
+        if (film.getReleaseDate().isBefore(CINEMA_BIRTHDAY)) {
+            throw new ValidationException(
+                    "Дата релиза не может быть раньше 28.12.1895"
+            );
+        }
     }
 }
