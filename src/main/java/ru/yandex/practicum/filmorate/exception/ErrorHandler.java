@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.exception;
 
-import jakarta.validation.ValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -24,16 +23,6 @@ public class ErrorHandler {
         );
     }
 
-    // 400 — ошибка валидации (для ValidationException)
-    @ExceptionHandler(ValidationException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleValidation(ValidationException e) {
-        return Map.of(
-                "error", "Validation error",
-                "message", e.getMessage()
-        );
-    }
-
     // 400 — ошибка валидации для @Valid
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -44,6 +33,16 @@ public class ErrorHandler {
                         .stream()
                         .map(ObjectError::getDefaultMessage)
                         .collect(Collectors.joining("; "))
+        );
+    }
+
+    // 400 — ошибка бизнес-валидации
+    @ExceptionHandler(ValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleBusinessValidation(ValidationException e) {
+        return Map.of(
+                "error", "Validation error",
+                "message", e.getMessage()
         );
     }
 
