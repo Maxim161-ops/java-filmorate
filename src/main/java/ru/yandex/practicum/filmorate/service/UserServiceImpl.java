@@ -28,7 +28,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User update(User user) {
-        userStorage.findById(user.getId()); // проверка существования
+        User existing = userStorage.findById(user.getId())
+                .orElseThrow(() -> new NotFoundException(
+                        "Пользователь с id=" + user.getId() + " не найден"
+                ));
+
         User updated = userStorage.update(user);
         log.info("Обновлён пользователь: id={}, login={}", updated.getId(), updated.getLogin());
         return updated;

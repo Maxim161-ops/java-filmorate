@@ -38,8 +38,11 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Film update(Film film) {
-        validateReleaseDate(film); // Проверка даты перед обновлением
-        filmStorage.findById(film.getId()); // проверка существования фильма
+        Film existing = filmStorage.findById(film.getId())
+                .orElseThrow(() -> new NotFoundException(
+                        "Фильм с id=" + film.getId() + " не найден"
+                ));
+
         Film updated = filmStorage.update(film);
         log.info("Обновлён фильм: id={}, name={}", updated.getId(), updated.getName());
         return updated;
