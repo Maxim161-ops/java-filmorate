@@ -85,8 +85,7 @@ public class FilmServiceImpl implements FilmService {
     @GetMapping("/popular")
     public Collection<Film> getPopular(@RequestParam(defaultValue = "10")@Positive(
             message = "Количество фильмов должно быть больше 0")
-            int count)
-    {
+            int count) {
         log.debug("Запрошен список популярных фильмов, count={}", count);
         return filmStorage.findAll().stream()
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
@@ -102,4 +101,5 @@ public class FilmServiceImpl implements FilmService {
         }
     }
 }
-// я эту ветку по ошибки уже смержил в main((
+// я поошибке ее уже смержил
+// не знаю правильно ли я исправил
