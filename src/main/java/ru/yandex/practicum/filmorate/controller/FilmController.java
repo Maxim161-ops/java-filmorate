@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -59,9 +60,8 @@ public class FilmController {
 
     // Получение популярных фильмов по количеству лайков
     @GetMapping("/popular")
-    public Collection<Film> getPopular(
-            @RequestParam(defaultValue = "10") int count
-    ) {
+    public Collection<Film> getPopular(@RequestParam(defaultValue = "10")
+                                       @Positive(message = "count должен быть больше 0") int count) {
         return filmService.getPopular(count);
     }
 }
