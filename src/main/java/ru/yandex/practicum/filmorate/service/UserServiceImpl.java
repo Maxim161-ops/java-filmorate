@@ -28,10 +28,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User update(User user) {
-        User existing = userStorage.findById(user.getId())
-                .orElseThrow(() -> new NotFoundException(
-                        "Пользователь с id=" + user.getId() + " не найден"
-                ));
+        User existing = userStorage.findById(user.getId()).orElseThrow(() -> new NotFoundException(
+                        "Пользователь с id=" + user.getId() + " не найден"));
 
         User updated = userStorage.update(user);
         log.info("Обновлён пользователь: id={}, login={}", updated.getId(), updated.getLogin());
@@ -71,6 +69,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void removeFriend(int userId, int friendId) {
+        // Проверка: нельзя удалить себя
+        if (userId == friendId) {
+            log.warn("Попытка удалить себя из друзей: userId={}", userId);
+            throw new IllegalArgumentException("Нельзя удалить себя из друзей");
+        }
+
         User user = findById(userId);
         User friend = findById(friendId);
 
@@ -95,6 +99,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Collection<User> getCommonFriends(int userId, int otherId) {
+        // Проверка: нельзя искать общих друзей с самим собой
+        if (userId == otherId) {
+            log.warn("Попытка получить общих друзей для одного и того же пользователя: userId={}", userId);
+            throw new IllegalArgumentException("Нельзя искать общих друзей с самим собой");
+        }
+
         User user = findById(userId);
         User other = findById(otherId);
 

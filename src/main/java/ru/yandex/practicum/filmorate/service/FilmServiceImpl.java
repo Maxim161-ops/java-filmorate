@@ -38,12 +38,13 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Film update(Film film) {
-        Film existing = filmStorage.findById(film.getId())
-                .orElseThrow(() -> new NotFoundException(
-                        "Фильм с id=" + film.getId() + " не найден"
-                ));
+        validateReleaseDate(film);
+
+        Film existing = filmStorage.findById(film.getId()).orElseThrow(() ->
+                        new NotFoundException("Фильм с id=" + film.getId() + " не найден"));
 
         Film updated = filmStorage.update(film);
+
         log.info("Обновлён фильм: id={}, name={}", updated.getId(), updated.getName());
         return updated;
     }
@@ -85,10 +86,7 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    @GetMapping("/popular")
-    public Collection<Film> getPopular(@RequestParam(defaultValue = "10")@Positive(
-            message = "Количество фильмов должно быть больше 0")
-            int count) {
+    public Collection<Film> getPopular(int count) {
         log.debug("Запрошен список популярных фильмов, count={}", count);
         return filmStorage.findAll().stream()
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
