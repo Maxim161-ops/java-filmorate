@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -21,7 +22,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User create(User user) {
-        validateUser(user); // Проверка перед созданием
         User created = userStorage.create(user);
         log.info("Создан пользователь: id={}, login={}", created.getId(), created.getLogin());
         return created;
@@ -29,7 +29,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User update(User user) {
-        validateUser(user); // Проверка перед обновлением
         userStorage.findById(user.getId()); // проверка существования
         User updated = userStorage.update(user);
         log.info("Обновлён пользователь: id={}, login={}", updated.getId(), updated.getLogin());
@@ -45,12 +44,15 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User findById(int id) {
-        log.debug("Запрос пользователя с id={}", id);
-        return userStorage.findById(id);
+        return userStorage.findById(id).orElseThrow(() ->
+                        new NotFoundException("Пользователь с id=" + id + " не найден"));
     }
 
     @Override
     public void addFriend(int userId, int friendId) {
+        if (userId == friendId) {
+            throw new ValidationException("Пользователь не может добавить самого себя в друзья");
+        }
         User user = findById(userId);
         User friend = findById(friendId);
 
@@ -99,15 +101,6 @@ public class UserServiceImpl implements UserService {
                 .filter(other.getFriends()::contains)
                 .map(this::findById)
                 .toList();
-    }
-
-    private void validateUser(User user) {
-        if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
-            throw new ValidationException("Дата рождения не может быть в будущем");
-        }
-        if (user.getLogin() != null && user.getLogin().contains(" ")) {
-            throw new ValidationException("Логин не может содержать пробелы");
-        }
     }
 }
 

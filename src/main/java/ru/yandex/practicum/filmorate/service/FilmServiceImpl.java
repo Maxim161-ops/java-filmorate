@@ -1,7 +1,11 @@
 package ru.yandex.practicum.filmorate.service;
 
+import jakarta.validation.constraints.Positive;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -50,8 +54,8 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Film findById(int id) {
-        log.debug("Запрос фильма с id={}", id);
-        return filmStorage.findById(id);
+        return filmStorage.findById(id).orElseThrow(() ->
+                        new NotFoundException("Фильм с id=" + id + " не найден"));
     }
 
     @Override
@@ -78,7 +82,11 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public Collection<Film> getPopular(int count) {
+    @GetMapping("/popular")
+    public Collection<Film> getPopular(@RequestParam(defaultValue = "10")@Positive(
+            message = "Количество фильмов должно быть больше 0")
+            int count)
+    {
         log.debug("Запрошен список популярных фильмов, count={}", count);
         return filmStorage.findAll().stream()
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
@@ -87,9 +95,6 @@ public class FilmServiceImpl implements FilmService {
     }
 
     private void validateReleaseDate(Film film) {
-        if (film.getReleaseDate() == null) {
-            throw new ValidationException("Дата релиза обязательна");
-        }
         if (film.getReleaseDate().isBefore(CINEMA_BIRTHDAY)) {
             throw new ValidationException(
                     "Дата релиза не может быть раньше 28.12.1895"
@@ -97,3 +102,4 @@ public class FilmServiceImpl implements FilmService {
         }
     }
 }
+// я эту ветку по ошибки уже смержил в main((
