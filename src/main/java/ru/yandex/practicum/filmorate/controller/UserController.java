@@ -8,6 +8,7 @@ import ru.yandex.practicum.filmorate.service.UserService;
 import jakarta.validation.Valid;
 import java.util.Collection;
 
+
 @Slf4j
 @RestController
 @RequestMapping("/users")

@@ -1,7 +1,9 @@
 package ru.yandex.practicum.filmorate.service;
 
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -34,9 +36,13 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Film update(Film film) {
-        validateReleaseDate(film); // Проверка даты перед обновлением
-        filmStorage.findById(film.getId()); // проверка существования фильма
+        validateReleaseDate(film);
+
+        Film existing = filmStorage.findById(film.getId()).orElseThrow(() ->
+                        new NotFoundException("Фильм с id=" + film.getId() + " не найден"));
+
         Film updated = filmStorage.update(film);
+
         log.info("Обновлён фильм: id={}, name={}", updated.getId(), updated.getName());
         return updated;
     }
@@ -50,8 +56,8 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Film findById(int id) {
-        log.debug("Запрос фильма с id={}", id);
-        return filmStorage.findById(id);
+        return filmStorage.findById(id).orElseThrow(() ->
+                        new NotFoundException("Фильм с id=" + id + " не найден"));
     }
 
     @Override
@@ -87,9 +93,6 @@ public class FilmServiceImpl implements FilmService {
     }
 
     private void validateReleaseDate(Film film) {
-        if (film.getReleaseDate() == null) {
-            throw new ValidationException("Дата релиза обязательна");
-        }
         if (film.getReleaseDate().isBefore(CINEMA_BIRTHDAY)) {
             throw new ValidationException(
                     "Дата релиза не может быть раньше 28.12.1895"
@@ -97,3 +100,5 @@ public class FilmServiceImpl implements FilmService {
         }
     }
 }
+// я поошибке ее уже смержил
+// не знаю правильно ли я исправил

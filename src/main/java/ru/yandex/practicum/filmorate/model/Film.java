@@ -25,4 +25,13 @@ public class Film {
 
     @Positive(message = "Продолжительность должна быть положительной")
     private int duration;
+
+    // жанры
+    @NotNull
+    @NotEmpty(message = "У фильма должен быть хотя бы один жанр")
+    private Set<Genre> genres = new HashSet<>();
+
+    // рейтинг
+    @NotNull
+    private MpaRating mpaRating;
 }
