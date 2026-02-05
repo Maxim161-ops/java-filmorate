@@ -110,6 +110,7 @@ public class UserDbStorage implements UserStorage {
 
         return users;
     }
+    
     public boolean userExists(int userId) {
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM users WHERE id = ?",
