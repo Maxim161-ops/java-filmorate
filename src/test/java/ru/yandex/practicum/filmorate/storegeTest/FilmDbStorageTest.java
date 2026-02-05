@@ -35,10 +35,18 @@ class FilmDbStorageTest {
 
     @BeforeEach
     void setup() {
-        // Создаем базовые таблицы зависимостей
-        jdbcTemplate.update("INSERT INTO mpa (id, name) VALUES (1, 'G')");
-        jdbcTemplate.update("INSERT INTO genres (id, name) VALUES (1, 'Comedy')");
-        jdbcTemplate.update("INSERT INTO users (id, email, login, name, birthday) VALUES (1, 'a@a.com', 'login', 'User', '2000-01-01')");
+        // Очищаем таблицы перед каждым тестом
+        jdbcTemplate.update("DELETE FROM film_genres");
+        jdbcTemplate.update("DELETE FROM film_likes");
+        jdbcTemplate.update("DELETE FROM films");
+        jdbcTemplate.update("DELETE FROM genres");
+        jdbcTemplate.update("DELETE FROM mpa");
+        jdbcTemplate.update("DELETE FROM users");
+
+        jdbcTemplate.update("MERGE INTO mpa (id, name) KEY(id) VALUES (1, 'G')");
+        jdbcTemplate.update("MERGE INTO genres (id, name) KEY(id) VALUES (1, 'Comedy')");
+        jdbcTemplate.update("MERGE INTO users (id, email, login, name, birthday) KEY(id) " +
+                "VALUES (1, 'a@a.com', 'login', 'User', '2000-01-01')");
     }
 
     @Test
