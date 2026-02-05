@@ -15,10 +15,13 @@ import java.util.Collection;
 @RestController
 @RequestMapping("/genres")
 public class GenreController {
+
     private final GenreStorage genreStorage;
 
     @GetMapping
-    public Collection<Genre> findAll() { return genreStorage.findAll(); }
+    public Collection<Genre> findAll() {
+        return genreStorage.findAll();
+    }
 
     @GetMapping("/{id}")
     public Genre findById(@PathVariable int id) {
