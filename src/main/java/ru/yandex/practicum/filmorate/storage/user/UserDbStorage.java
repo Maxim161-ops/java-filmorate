@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.mapper.UserRowMapper;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -87,7 +88,7 @@ public class UserDbStorage implements UserStorage {
         ).stream().findFirst();
 
         userOpt.ifPresent(user -> {
-            user.setFriends(friendsDbStorage.getFriends(user.getId()));
+            user.setFriends(new HashSet<>(friendsDbStorage.getFriends(user.getId())));
             log.debug("Загружен пользователь {} с {} друзьями", user.getId(), user.getFriends().size());
         });
 
@@ -103,7 +104,7 @@ public class UserDbStorage implements UserStorage {
         List<User> users = jdbc.query("SELECT * FROM users", userRowMapper);
 
         for (User user : users) {
-            user.setFriends(friendsDbStorage.getFriends(user.getId()));
+            user.setFriends(new HashSet<>(friendsDbStorage.getFriends(user.getId())));
         }
 
         return users;

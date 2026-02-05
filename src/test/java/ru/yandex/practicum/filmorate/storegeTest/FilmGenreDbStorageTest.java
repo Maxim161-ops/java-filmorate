@@ -24,7 +24,7 @@ class FilmGenreDbStorageTest {
     @Test
     void testSaveAndGetGenres() {
         Film film = new Film();
-        film.setId(1);
+        film.setId(1L);
         film.setGenres(Set.of(new Genre(1, "Comedy"), new Genre(2, "Drama")));
 
         filmGenreDbStorage.saveFilmGenres(film);

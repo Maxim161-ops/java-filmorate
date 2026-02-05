@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Таблица фильмов
 CREATE TABLE IF NOT EXISTS films (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
     description VARCHAR(200),
     release_date DATE NOT NULL,
@@ -38,13 +38,13 @@ CREATE TABLE IF NOT EXISTS film_genres (
     FOREIGN KEY (genre_id) REFERENCES genres(id)
 );
 
--- Таблица лайков
-CREATE TABLE IF NOT EXISTS likes (
-    film_id INT,
-    user_id INT,
+-- Таблица лайков фильмов
+CREATE TABLE IF NOT EXISTS film_likes (
+    film_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
     PRIMARY KEY (film_id, user_id),
-    FOREIGN KEY (film_id) REFERENCES films(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (film_id) REFERENCES films(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- Таблица дружбы

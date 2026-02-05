@@ -9,7 +9,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mapper.FilmRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
-
+import ru.yandex.practicum.filmorate.model.Mpa;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.time.LocalDate;
@@ -30,26 +30,36 @@ public class FilmDbStorage implements FilmStorage {
     public Film create(Film film) {
         validateReleaseDate(film);
 
+        // Если MPA не передан, ставим дефолтный (id = 1)
+        if (film.getMpa() == null) {
+            film.setMpa(new Mpa(1, null)); // name можно оставить null
+        }
+
         KeyHolder keyHolder = new GeneratedKeyHolder();
-        String sql = "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
+
+        String sql = "INSERT INTO films (name, description, release_date, duration, mpa_id) " +
+                "VALUES (?, ?, ?, ?, ?)";
+
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
             ps.setString(1, film.getName());
             ps.setString(2, film.getDescription());
             ps.setDate(3, Date.valueOf(film.getReleaseDate()));
             ps.setInt(4, film.getDuration());
-            ps.setInt(5, film.getMpa().getId());
+            ps.setInt(5, film.getMpa().getId()); // теперь гарантированно не null
             return ps;
         }, keyHolder);
 
-        film.setId(Objects.requireNonNull(keyHolder.getKey()).intValue());
+        // Получаем сгенерированный ID и устанавливаем в объект
+        Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
+        film.setId(generatedId);
 
-        // Сохраняем жанры фильма
+        // Сохраняем жанры фильма (если есть)
         filmGenreDbStorage.saveFilmGenres(film);
 
-        // Подгружаем лайки и жанры (чтобы объект был готов к сериализации)
-        film.setLikes(filmLikeDbStorage.getLikes(film.getId()));
-        film.setGenres(filmGenreDbStorage.getGenresForFilm(film.getId()));
+        // Подгружаем лайки и жанры
+        film.setLikes(filmLikeDbStorage.getLikes(generatedId));
+        film.setGenres(filmGenreDbStorage.getGenresForFilm(generatedId));
 
         return film;
     }
@@ -61,6 +71,10 @@ public class FilmDbStorage implements FilmStorage {
         // Проверка существования фильма
         findById(film.getId())
                 .orElseThrow(() -> new NotFoundException("Фильм с id=" + film.getId() + " не найден"));
+
+        if (film.getMpa() == null) {
+            film.setMpa(new Mpa(1, null));
+        }
 
         // Обновляем запись в БД
         String sql = "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ? WHERE id = ?";
@@ -77,20 +91,29 @@ public class FilmDbStorage implements FilmStorage {
             throw new NotFoundException("Фильм с id=" + film.getId() + " не найден");
         }
 
-        // Подгружаем MPA, лайки и жанры
-        Film updated = findById(film.getId()).get();
-        updated.setLikes(filmLikeDbStorage.getLikes(film.getId()));
-        updated.setGenres(filmGenreDbStorage.getGenresForFilm(film.getId()));
+        // Обновляем жанры фильма
+        filmGenreDbStorage.saveFilmGenres(film);
 
-        return updated;
+        // Подгружаем лайки и жанры для корректного ответа
+        film.setLikes(filmLikeDbStorage.getLikes(film.getId()));
+        film.setGenres(filmGenreDbStorage.getGenresForFilm(film.getId()));
+
+        return film;
     }
 
     @Override
     public List<Film> findAll() {
-        String sql = "SELECT id, name, description, release_date, duration, mpa_id FROM films";
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                "f.mpa_id, m.name AS mpa_name " +
+                "FROM films f " +
+                "JOIN mpa m ON f.mpa_id = m.id";
+
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper);
 
         for (Film film : films) {
+            if (film.getMpa() == null) {
+                film.setMpa(new Mpa(1, null));
+            }
             film.setGenres(filmGenreDbStorage.getGenresForFilm(film.getId()));
             film.setLikes(filmLikeDbStorage.getLikes(film.getId()));
         }
@@ -110,8 +133,8 @@ public class FilmDbStorage implements FilmStorage {
         if (films.isEmpty()) return Optional.empty();
 
         Film film = films.get(0);
-        film.setLikes(filmLikeDbStorage.getLikes(film.getId()));
         film.setGenres(filmGenreDbStorage.getGenresForFilm(film.getId()));
+        film.setLikes(filmLikeDbStorage.getLikes(film.getId()));
 
         return Optional.of(film);
     }

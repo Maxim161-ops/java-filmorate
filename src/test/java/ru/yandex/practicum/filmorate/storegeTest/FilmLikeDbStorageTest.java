@@ -20,6 +20,11 @@ class FilmLikeDbStorageTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    public void addLike(int filmId, int userId) {
+        String sql = "INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)";
+        jdbcTemplate.update(sql, filmId, userId);
+    }
+
     @Test
     void shouldAddLike() {
         jdbcTemplate.update("""

@@ -11,22 +11,22 @@ import java.util.Set;
 @Data
 public class Film {
 
-    private int id;
+    private Long id;
 
-    @NotBlank
+    @NotBlank(message = "Название фильма не может быть пустым")
     private String name;
 
-    @Size(max = 200)
+    @Size(max = 200, message = "Описание не может быть больше 200 символов")
     private String description;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    @NotNull
+    @NotNull(message = "Дата релиза обязательна")
     private LocalDate releaseDate;
 
-    @Positive
+    @Positive(message = "Продолжительность фильма должна быть положительной")
     private int duration;
 
-    @NotNull
+
     private Mpa mpa;
 
     private Set<Genre> genres = new HashSet<>();

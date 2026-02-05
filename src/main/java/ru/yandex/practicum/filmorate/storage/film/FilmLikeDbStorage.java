@@ -15,14 +15,14 @@ public class FilmLikeDbStorage {
 
     public void addLike(long filmId, long userId) {
         jdbcTemplate.update(
-                "INSERT INTO likes (film_id, user_id) VALUES (?, ?)",
+                "INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)",
                 filmId, userId
         );
     }
 
     public void removeLike(long filmId, long userId) {
         jdbcTemplate.update(
-                "DELETE FROM likes WHERE film_id = ? AND user_id = ?",
+                "DELETE FROM film_likes WHERE film_id = ? AND user_id = ?",
                 filmId, userId
         );
     }
@@ -30,7 +30,7 @@ public class FilmLikeDbStorage {
     public Set<Long> getLikes(long filmId) {
         return new HashSet<>(
                 jdbcTemplate.query(
-                        "SELECT user_id FROM likes WHERE film_id = ?",
+                        "SELECT user_id FROM film_likes WHERE film_id = ?",
                         (rs, rowNum) -> rs.getLong("user_id"),
                         filmId
                 )
