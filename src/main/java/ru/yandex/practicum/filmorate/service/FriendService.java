@@ -10,6 +10,6 @@ public interface FriendService {
     void removeFriend(int userId, int friendId);
 
     Collection<User> getFriends(int userId);
-    
+
     Collection<User> getCommonFriends(int userId, int otherId);
 }

@@ -38,5 +38,4 @@ public class UserController {
     public User getUserById(@PathVariable int id) {
         return userService.findById(id);
     }
-
 }
