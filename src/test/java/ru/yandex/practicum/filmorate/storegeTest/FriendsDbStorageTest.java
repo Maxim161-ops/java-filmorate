@@ -24,7 +24,7 @@ class FriendsDbStorageTest {
     void shouldAddAndRemoveFriend() {
         jdbcTemplate.update("""
                     INSERT INTO users (id, email, login, name, birthday)
-                    VALUES 
+                    VALUES
                     (1, 'a@a.ru', 'a', 'a', '2000-01-01'),
                     (2, 'b@b.ru', 'b', 'b', '2000-01-01')
                 """);
