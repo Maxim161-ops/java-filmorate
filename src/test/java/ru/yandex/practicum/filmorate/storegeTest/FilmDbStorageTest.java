@@ -15,7 +15,6 @@ import ru.yandex.practicum.filmorate.storage.film.FilmGenreDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmLikeDbStorage;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,7 +76,7 @@ class FilmDbStorageTest {
 
         Film created = filmDbStorage.create(film);
 
-        created.setGenres(Set.of(new Genre(1, "Comedy"))); 
+        created.setGenres(Set.of(new Genre(1, "Comedy")));
         filmGenreDbStorage.saveFilmGenres(created);
 
         Integer count = jdbcTemplate.queryForObject(
