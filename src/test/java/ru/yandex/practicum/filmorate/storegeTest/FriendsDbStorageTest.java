@@ -23,11 +23,11 @@ class FriendsDbStorageTest {
     @Test
     void shouldAddAndRemoveFriend() {
         jdbcTemplate.update("""
-            INSERT INTO users (id, email, login, name, birthday)
-            VALUES 
-            (1, 'a@a.ru', 'a', 'a', '2000-01-01'),
-            (2, 'b@b.ru', 'b', 'b', '2000-01-01')
-        """);
+                    INSERT INTO users (id, email, login, name, birthday)
+                    VALUES 
+                    (1, 'a@a.ru', 'a', 'a', '2000-01-01'),
+                    (2, 'b@b.ru', 'b', 'b', '2000-01-01')
+                """);
 
         friendsDbStorage.addFriend(1, 2);
 

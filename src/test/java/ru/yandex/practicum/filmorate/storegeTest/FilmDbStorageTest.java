@@ -28,8 +28,8 @@ class FilmDbStorageTest {
     @Test
     void shouldCreateFilm() {
         jdbcTemplate.update("""
-            INSERT INTO mpa (id, name) VALUES (1, 'G')
-        """);
+                    INSERT INTO mpa (id, name) VALUES (1, 'G')
+                """);
 
         Film film = new Film();
         film.setName("Film");

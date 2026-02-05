@@ -41,9 +41,9 @@ class UserDbStorageTest {
     @Test
     void shouldFindUserById() {
         jdbcTemplate.update("""
-            INSERT INTO users (id, email, login, name, birthday)
-            VALUES (1, 'a@a.ru', 'login', 'name', '2000-01-01')
-        """);
+                    INSERT INTO users (id, email, login, name, birthday)
+                    VALUES (1, 'a@a.ru', 'login', 'name', '2000-01-01')
+                """);
 
         User user = userDbStorage.findById(1).orElse(null);
 
@@ -51,4 +51,3 @@ class UserDbStorageTest {
         assertThat(user.getId()).isEqualTo(1);
     }
 }
-

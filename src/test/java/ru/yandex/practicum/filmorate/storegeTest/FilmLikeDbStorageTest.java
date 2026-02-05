@@ -23,14 +23,14 @@ class FilmLikeDbStorageTest {
     @Test
     void shouldAddLike() {
         jdbcTemplate.update("""
-            INSERT INTO users (id, email, login, name, birthday)
-            VALUES (1, 'a@a.ru', 'a', 'a', '2000-01-01')
-        """);
+                    INSERT INTO users (id, email, login, name, birthday)
+                    VALUES (1, 'a@a.ru', 'a', 'a', '2000-01-01')
+                """);
 
         jdbcTemplate.update("""
-            INSERT INTO films (id, name, description, release_date, duration, mpa_id)
-            VALUES (1, 'film', 'desc', '2020-01-01', 100, 1)
-        """);
+                    INSERT INTO films (id, name, description, release_date, duration, mpa_id)
+                    VALUES (1, 'film', 'desc', '2020-01-01', 100, 1)
+                """);
 
         filmLikeDbStorage.addLike(1, 1);
 
