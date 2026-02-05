@@ -115,14 +115,11 @@ class FilmDbStorageTest {
         film.setDuration(100);
         film.setMpa(new Mpa(1, "G"));
 
-
         Film created = filmDbStorage.create(film);
-
-
+        
         created.setGenres(Set.of(new Genre(1, "Comedy")));
         filmGenreDbStorage.saveFilmGenres(created);
 
-        
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM film_genres WHERE film_id = ? AND genre_id = ?",
                 Integer.class, created.getId(), 1
