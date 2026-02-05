@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
@@ -12,26 +13,23 @@ public class Film {
 
     private int id;
 
-    private Set<Integer> likes = new HashSet<>();
-
-    @NotBlank(message = "Название фильма не может быть пустым")
+    @NotBlank
     private String name;
 
-    @Size(max = 200, message = "Описание не должно превышать 200 символов")
+    @Size(max = 200)
     private String description;
 
-    @NotNull(message = "Дата релиза обязательна")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @NotNull
     private LocalDate releaseDate;
 
-    @Positive(message = "Продолжительность должна быть положительной")
+    @Positive
     private int duration;
 
-    // жанры
     @NotNull
-    @NotEmpty(message = "У фильма должен быть хотя бы один жанр")
+    private Mpa mpa;
+
     private Set<Genre> genres = new HashSet<>();
 
-    // рейтинг
-    @NotNull
-    private MpaRating mpaRating;
+    private Set<Long> likes = new HashSet<>();
 }

@@ -12,5 +12,7 @@ public interface FilmStorage {
 
     Collection<Film> findAll();
 
-    Optional<Film> findById(int id);
+    Optional<Film> findById(long id);
+
+    void validateReleaseDate(Film film);
 }

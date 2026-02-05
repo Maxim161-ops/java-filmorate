@@ -13,4 +13,6 @@ public interface UserStorage {
     Collection<User> findAll();
 
     Optional<User> findById(int id);
+
+    boolean userExists(int userId);
 }
