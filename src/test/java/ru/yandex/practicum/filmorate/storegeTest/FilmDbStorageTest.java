@@ -8,12 +8,15 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.mapper.FilmRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmGenreDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmLikeDbStorage;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -74,10 +77,13 @@ class FilmDbStorageTest {
 
         Film created = filmDbStorage.create(film);
 
-        // Проверяем что жанр добавлен
+        created.setGenres(Set.of(new Genre(1, "Comedy"))); 
+        filmGenreDbStorage.saveFilmGenres(created);
+
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM film_genres WHERE film_id = ? AND genre_id = ?",
-                Integer.class, created.getId(), 1);
+                Integer.class, created.getId(), 1
+        );
         assertThat(count).isEqualTo(1);
     }
 
