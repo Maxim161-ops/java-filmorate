@@ -8,8 +8,6 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.mapper.UserRowMapper;
-
-
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.util.List;
@@ -24,7 +22,6 @@ public class UserDbStorage implements UserStorage {
     private final JdbcTemplate jdbc;
     private final UserRowMapper userRowMapper;
     private final FriendsDbStorage friendsDbStorage;
-    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public User create(User user) {
@@ -59,7 +56,7 @@ public class UserDbStorage implements UserStorage {
                 user.getEmail(),
                 user.getLogin(),
                 user.getName(),
-                user.getBirthday(),
+                Date.valueOf(user.getBirthday()),
                 user.getId()
         );
 
@@ -110,9 +107,9 @@ public class UserDbStorage implements UserStorage {
 
         return users;
     }
-    
+
     public boolean userExists(int userId) {
-        Integer count = jdbcTemplate.queryForObject(
+        Integer count = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM users WHERE id = ?",
                 Integer.class,
                 userId
