@@ -116,7 +116,6 @@ class FilmDbStorageTest {
         film.setMpa(new Mpa(1, "G"));
 
         Film created = filmDbStorage.create(film);
-        
         created.setGenres(Set.of(new Genre(1, "Comedy")));
         filmGenreDbStorage.saveFilmGenres(created);
 
