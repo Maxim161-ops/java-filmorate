@@ -78,10 +78,14 @@ class FilmGenreDbStorageTest {
         @Bean
         public FilmLikeDbStorage filmLikeDbStorage(JdbcTemplate jdbcTemplate) {
             return new FilmLikeDbStorage(jdbcTemplate) {
+
                 @Override
-                public void addLike(long filmId, long userId) {}
+                public void addLike(long filmId, long userId) {
+                }
+
                 @Override
-                public void removeLike(long filmId, long userId) {}
+                public void removeLike(long filmId, long userId) {
+                }
             };
         }
     }
