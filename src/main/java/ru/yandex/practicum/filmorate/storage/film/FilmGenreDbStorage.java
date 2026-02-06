@@ -16,24 +16,25 @@ public class FilmGenreDbStorage {
     private final JdbcTemplate jdbcTemplate;
 
     public void saveFilmGenres(Film film) {
-        // удаление старых жанров
-        jdbcTemplate.update("DELETE FROM film_genres WHERE film_id = ?", film.getId());
+        jdbcTemplate.update(
+                "DELETE FROM film_genres WHERE film_id = ?",
+                film.getId()
+        );
 
-        Set<Genre> genres = film.getGenres();
-        if (genres == null || genres.isEmpty()) return;
+        if (film.getGenres() == null || film.getGenres().isEmpty()) {
+            return;
+        }
 
-        // добавляем новые
-        for (Genre genre : genres) {
+        for (Genre genre : film.getGenres()) {
             jdbcTemplate.update(
                     "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)",
                     film.getId(),
-                    genre.getId() // используем id из объекта, а не ordinal
+                    genre.getId()
             );
         }
     }
 
     public Set<Genre> getGenresForFilm(Long filmId) {
-
         return new LinkedHashSet<>(jdbcTemplate.query(
                 "SELECT g.id, g.name " +
                         "FROM film_genres fg " +
