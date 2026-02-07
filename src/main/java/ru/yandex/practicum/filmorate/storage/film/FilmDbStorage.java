@@ -78,7 +78,7 @@ public class FilmDbStorage implements FilmStorage {
 
         // Обновляем запись в БД
         String sql = "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ? WHERE id = ?";
-        int rows = jdbcTemplate.update(sql,
+        jdbcTemplate.update(sql,
                 film.getName(),
                 film.getDescription(),
                 Date.valueOf(film.getReleaseDate()),
@@ -86,10 +86,6 @@ public class FilmDbStorage implements FilmStorage {
                 film.getMpa().getId(),
                 film.getId()
         );
-
-        if (rows == 0) {
-            throw new NotFoundException("Фильм с id=" + film.getId() + " не найден");
-        }
 
         // Обновляем жанры фильма
         filmGenreDbStorage.saveFilmGenres(film);

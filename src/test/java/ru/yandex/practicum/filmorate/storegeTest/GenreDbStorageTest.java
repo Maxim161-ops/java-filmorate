@@ -31,7 +31,7 @@ class GenreDbStorageTest {
     void testFindById() {
         Optional<Genre> genreOpt = genreStorage.findById(1);
         assertThat(genreOpt).isPresent();
-        assertThat(genreOpt.get().getName()).isEqualTo("COMEDY");
+        assertThat(genreOpt.get().getName()).isEqualTo("Комедия");
     }
 
     @Test

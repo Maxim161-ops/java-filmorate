@@ -28,8 +28,11 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User create(User user) {
-        KeyHolder keyHolder = new GeneratedKeyHolder();
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
 
+        KeyHolder keyHolder = new GeneratedKeyHolder();
         String sql = "INSERT INTO users(email, login, name, birthday) VALUES (?, ?, ?, ?)";
 
         jdbc.update(connection -> {

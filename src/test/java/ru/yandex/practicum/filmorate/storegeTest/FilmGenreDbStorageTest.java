@@ -72,8 +72,8 @@ class FilmGenreDbStorageTest {
         Film created = filmDbStorage.create(film);
 
         created.setGenres(Set.of(
-                new Genre(1, "COMEDY"),
-                new Genre(2, "DRAMA")
+                new Genre(1, "Комедия"),
+                new Genre(2, "Драма")
         ));
 
         filmGenreDbStorage.saveFilmGenres(created);
@@ -87,6 +87,6 @@ class FilmGenreDbStorageTest {
         // Проверяем названия
         assertThat(genres)
                 .extracting(Genre::getName)
-                .containsExactlyInAnyOrder("COMEDY", "DRAMA");
+                .containsExactlyInAnyOrder("Комедия", "Драма");
     }
 }

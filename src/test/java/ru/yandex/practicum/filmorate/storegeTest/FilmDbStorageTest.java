@@ -46,7 +46,7 @@ class FilmDbStorageTest {
         jdbcTemplate.update("DELETE FROM users");
 
         jdbcTemplate.update("MERGE INTO mpa (id, name) KEY(id) VALUES (1, 'G')");
-        jdbcTemplate.update("MERGE INTO genres (id, name) KEY(id) VALUES (1, 'Comedy')");
+        jdbcTemplate.update("MERGE INTO genres (id, name) KEY(id) VALUES (1, 'Комедия')");
         jdbcTemplate.update("MERGE INTO users (id, email, login, name, birthday) KEY(id) " +
                 "VALUES (1, 'a@a.com', 'login', 'User', '2000-01-01')");
     }
@@ -76,7 +76,7 @@ class FilmDbStorageTest {
 
         Film created = filmDbStorage.create(film);
 
-        created.setGenres(Set.of(new Genre(1, "Comedy")));
+        created.setGenres(Set.of(new Genre(1, "Комедия")));
         filmGenreDbStorage.saveFilmGenres(created);
 
         Integer count = jdbcTemplate.queryForObject(
@@ -116,7 +116,7 @@ class FilmDbStorageTest {
         film.setMpa(new Mpa(1, "G"));
 
         Film created = filmDbStorage.create(film);
-        created.setGenres(Set.of(new Genre(1, "Comedy")));
+        created.setGenres(Set.of(new Genre(1, "Комедия")));
         filmGenreDbStorage.saveFilmGenres(created);
 
         Integer count = jdbcTemplate.queryForObject(
