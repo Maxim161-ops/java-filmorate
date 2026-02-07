@@ -52,11 +52,11 @@ class FilmGenreDbStorageTest {
         );
 
         jdbcTemplate.update(
-                "MERGE INTO genres (id, name) KEY(id) VALUES (1, 'COMEDY')"
+                "MERGE INTO genres (id, name) KEY(id) VALUES (1, 'Комедия')"
         );
 
         jdbcTemplate.update(
-                "MERGE INTO genres (id, name) KEY(id) VALUES (2, 'DRAMA')"
+                "MERGE INTO genres (id, name) KEY(id) VALUES (2, 'Драма')"
         );
     }
 
