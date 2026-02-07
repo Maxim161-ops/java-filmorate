@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.mapper.UserRowMapper;
 
@@ -27,10 +28,6 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User create(User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         String sql = "INSERT INTO users(email, login, name, birthday) VALUES (?, ?, ?, ?)";
@@ -53,6 +50,10 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User update(User user) {
+        this.findById(user.getId())
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+
+        // Обновляем данные пользователя в БД
         jdbc.update(
                 "UPDATE users SET email=?, login=?, name=?, birthday=? WHERE id=?",
                 user.getEmail(),
@@ -63,19 +64,6 @@ public class UserDbStorage implements UserStorage {
         );
 
         log.info("Обновлён пользователь: id={}, login={}, email={}", user.getId(), user.getLogin(), user.getEmail());
-
-        if (user.getFriends() != null) {
-            friendsDbStorage.getFriends(user.getId()).forEach(friendId -> {
-                friendsDbStorage.removeFriend(user.getId(), friendId);
-                log.debug("Удалён друг {} у пользователя {}", friendId, user.getId());
-            });
-
-            for (Integer friendId : user.getFriends()) {
-                friendsDbStorage.addFriend(user.getId(), friendId);
-                log.debug("Добавлен друг {} для пользователя {}", friendId, user.getId());
-            }
-        }
-
         return user;
     }
 

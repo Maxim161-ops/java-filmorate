@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.service;
 
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,7 +36,7 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public Film update(Film film) {
         validateReleaseDate(film);
-        Film existing = filmStorage.findById(film.getId())
+        filmStorage.findById(film.getId())
                 .orElseThrow(() -> new NotFoundException("Фильм с id=" + film.getId() + " не найден"));
         Film updated = filmStorage.update(film);
         log.info("Обновлён фильм: id={}, name={}", updated.getId(), updated.getName());

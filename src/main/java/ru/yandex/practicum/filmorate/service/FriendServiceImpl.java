@@ -36,9 +36,6 @@ public class FriendServiceImpl implements FriendService {
 
     @Override
     public void removeFriend(int userId, int friendId) {
-        if (userId == friendId) {
-            throw new ValidationException("Нельзя удалить себя из друзей");
-        }
 
         userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
@@ -51,7 +48,7 @@ public class FriendServiceImpl implements FriendService {
 
     @Override
     public Collection<User> getFriends(int userId) {
-        User user = userStorage.findById(userId)
+        userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
 
         return friendsDbStorage.getFriends(userId).stream()

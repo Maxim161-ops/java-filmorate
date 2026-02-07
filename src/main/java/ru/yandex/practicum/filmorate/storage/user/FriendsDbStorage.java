@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.storage.user;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 
 import java.util.List;
 
@@ -23,11 +22,6 @@ public class FriendsDbStorage {
     public void removeFriend(int userId, int friendId) {
         String sql = "DELETE FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)";
         int rows = jdbcTemplate.update(sql, userId, friendId, friendId, userId);
-
-        if (rows == 0) {
-            throw new NotFoundException(
-                    "Дружба между пользователями " + userId + " и " + friendId + " не найдена");
-        }
     }
 
     // Получить список друзей пользователя
