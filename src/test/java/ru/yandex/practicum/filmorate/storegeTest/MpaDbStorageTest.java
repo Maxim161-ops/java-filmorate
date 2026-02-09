@@ -9,9 +9,9 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaDbStorage;
 
 import java.util.Collection;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @JdbcTest
 @Import(MpaDbStorage.class)
@@ -37,8 +37,7 @@ class MpaDbStorageTest {
 
     @Test
     void testFindByIdNotFound() {
-        assertThatThrownBy(() -> mpaStorage.findById(999))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("не найден");
+        Optional<Mpa> mpaOpt = mpaStorage.findById(999);
+        assertThat(mpaOpt).isEmpty();
     }
 }
