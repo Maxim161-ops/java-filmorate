@@ -7,6 +7,6 @@ import java.util.Optional;
 
 public interface MpaStorage {
 
-    List<Mpa> getAll();                 // получить все MPA
-    Optional<Mpa> getById(int id);      // получить MPA по id
+    List<Mpa> getAll();
+    Optional<Mpa> getById(int id);
 }
