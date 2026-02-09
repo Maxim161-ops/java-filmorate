@@ -21,17 +21,25 @@ public class FriendServiceImpl implements FriendService {
 
     @Override
     public void addFriend(int userId, int friendId) {
+
         if (userId == friendId) {
-            throw new ValidationException("Пользователь не может добавить самого себя в друзья");
+            throw new ValidationException("Пользователь не может добавить самого себя");
         }
 
         userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+
         userStorage.findById(friendId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + friendId + " не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
         friendsDbStorage.addFriend(userId, friendId);
-        log.info("Пользователь {} добавил в друзья пользователя {}", userId, friendId);
+
+        // Проверяем взаимность
+        if (friendsDbStorage.getFriends(friendId).contains(userId)) {
+            friendsDbStorage.addFriend(friendId, userId);
+        }
+
+        log.info("Пользователь {} добавил в друзья {}", userId, friendId);
     }
 
     @Override
