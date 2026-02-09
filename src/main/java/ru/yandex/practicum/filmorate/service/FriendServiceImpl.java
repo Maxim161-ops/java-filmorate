@@ -21,30 +21,28 @@ public class FriendServiceImpl implements FriendService {
 
     @Override
     public void addFriend(int userId, int friendId) {
-
         if (userId == friendId) {
-            throw new ValidationException("Пользователь не может добавить самого себя");
+            throw new ValidationException("Пользователь не может добавить самого себя в друзья");
         }
 
         userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-
+                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
         userStorage.findById(friendId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + friendId + " не найден"));
+
+        boolean reverseExists = friendsDbStorage.getFriends(friendId).contains(userId);
 
         friendsDbStorage.addFriend(userId, friendId);
 
-        // Проверяем взаимность
-        if (friendsDbStorage.getFriends(friendId).contains(userId)) {
+        if (reverseExists) {
             friendsDbStorage.addFriend(friendId, userId);
         }
 
-        log.info("Пользователь {} добавил в друзья {}", userId, friendId);
+        log.info("Пользователь {} добавил в друзья пользователя {}", userId, friendId);
     }
 
     @Override
     public void removeFriend(int userId, int friendId) {
-
         userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
         userStorage.findById(friendId)
@@ -67,16 +65,18 @@ public class FriendServiceImpl implements FriendService {
 
     @Override
     public Collection<User> getCommonFriends(int userId, int otherId) {
+        if (userId == otherId) {
+            throw new ValidationException("Нельзя искать общих друзей с самим собой");
+        }
 
         userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-
+                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
         userStorage.findById(otherId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + otherId + " не найден"));
 
         return friendsDbStorage.getCommonFriends(userId, otherId).stream()
                 .map(id -> userStorage.findById(id)
-                        .orElseThrow(() -> new NotFoundException("Пользователь не найден")))
+                        .orElseThrow(() -> new NotFoundException("Пользователь с id=" + id + " не найден")))
                 .toList();
     }
 }

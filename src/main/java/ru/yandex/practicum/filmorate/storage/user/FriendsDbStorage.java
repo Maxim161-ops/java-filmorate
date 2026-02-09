@@ -12,15 +12,16 @@ public class FriendsDbStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
-    // Добавление друга (двусторонняя дружба)
+    // Добавление заявки в друзья (односторонняя)
     public void addFriend(int userId, int friendId) {
         String sql = "MERGE INTO friends (user_id, friend_id) KEY(user_id, friend_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, userId, friendId);
     }
 
+    // Удаление дружбы или заявки
     public void removeFriend(int userId, int friendId) {
         String sql = "DELETE FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)";
-        int rows = jdbcTemplate.update(sql, userId, friendId, friendId, userId);
+        jdbcTemplate.update(sql, userId, friendId, friendId, userId);
     }
 
     // Получить список друзей пользователя
