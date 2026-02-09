@@ -29,7 +29,7 @@ public class FilmLikeController {
     public void removeLike(@PathVariable int id, @PathVariable int userId) {
         filmLikeService.removeLike(id, userId);
     }
-    
+
     @GetMapping("/popular")
     public Collection<Film> getPopular(@RequestParam(defaultValue = "10")
                                        @Positive(message = "count должен быть больше 0") int count) {
