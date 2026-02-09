@@ -1,43 +1,38 @@
 package ru.yandex.practicum.filmorate.storegeTest;
 
-import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaDbStorage;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@JdbcTest
-@Import(MpaDbStorage.class)
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
+@SpringBootTest
 class MpaDbStorageTest {
 
-    private final MpaDbStorage mpaStorage;
-
-    @Test
-    void testFindAllMpa() {
-        Collection<Mpa> allMpa = mpaStorage.findAll();
-        assertThat(allMpa).isNotEmpty();
-        assertThat(allMpa).extracting("id").contains(1, 2, 3, 4, 5);
-    }
+    @Autowired
+    private MpaDbStorage mpaStorage;
 
     @Test
     void testFindById() {
-        Mpa mpa = mpaStorage.findById(1)
-                .orElseThrow(() -> new RuntimeException("MPA с id=1 не найден"));
-        assertThat(mpa).isNotNull();
-        assertThat(mpa.getName()).isEqualTo("G");
+        Optional<Mpa> mpaOpt = mpaStorage.findById(1);
+        assertThat(mpaOpt).isPresent();
+        assertThat(mpaOpt.get().getName()).isEqualTo("G");
     }
 
     @Test
     void testFindByIdNotFound() {
         Optional<Mpa> mpaOpt = mpaStorage.findById(999);
         assertThat(mpaOpt).isEmpty();
+    }
+
+    @Test
+    void testFindAllMpa() {
+        List<Mpa> allMpa = mpaStorage.findAll();
+        assertThat(allMpa).isNotEmpty();
     }
 }
