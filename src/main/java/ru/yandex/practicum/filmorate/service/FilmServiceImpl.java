@@ -6,41 +6,67 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.storage.film.FilmLikeDbStorage;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.storage.film.FilmGenreDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FilmServiceImpl implements FilmService {
 
-    private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
-
     private final FilmStorage filmStorage;
-    private final FilmLikeDbStorage filmLikeDbStorage;
-    private final UserService userService;
-
+    private final MpaStorage mpaStorage;
+    private final GenreStorage genreStorage;
+    private final FilmGenreDbStorage filmGenreDbStorage;
 
     @Override
     public Film create(Film film) {
         validateReleaseDate(film);
-        Film created = filmStorage.create(film);
-        log.info("Создан фильм: id={}, name={}", created.getId(), created.getName());
-        return created;
+        checkAndSetMpa(film);
+        checkAndSetGenres(film);
+
+        // Сохраняем фильм
+        Film createdFilm = filmStorage.create(film);
+
+        // Сохраняем жанры
+        filmGenreDbStorage.saveFilmGenres(createdFilm);
+
+        // Подгружаем жанры (убираем дубликаты)
+        createdFilm.setGenres(filmGenreDbStorage.getGenresForFilm(createdFilm.getId()));
+
+        log.info("Создан фильм: id={}, name={}", createdFilm.getId(), createdFilm.getName());
+        return createdFilm;
     }
 
     @Override
     public Film update(Film film) {
         validateReleaseDate(film);
+
+        // Проверяем, что фильм существует
         filmStorage.findById(film.getId())
                 .orElseThrow(() -> new NotFoundException("Фильм с id=" + film.getId() + " не найден"));
-        Film updated = filmStorage.update(film);
-        log.info("Обновлён фильм: id={}, name={}", updated.getId(), updated.getName());
-        return updated;
+
+        checkAndSetMpa(film);
+        checkAndSetGenres(film);
+
+        Film updatedFilm = filmStorage.update(film);
+
+        // Сохраняем жанры
+        filmGenreDbStorage.saveFilmGenres(updatedFilm);
+
+        // Подгружаем жанры
+        updatedFilm.setGenres(filmGenreDbStorage.getGenresForFilm(updatedFilm.getId()));
+
+        log.info("Обновлён фильм: id={}, name={}", updatedFilm.getId(), updatedFilm.getName());
+        return updatedFilm;
     }
 
     @Override
@@ -58,35 +84,38 @@ public class FilmServiceImpl implements FilmService {
         return film;
     }
 
-    @Override
-    public void addLike(int filmId, int userId) {
-        findById(filmId);
-        userService.findById(userId);
-        filmLikeDbStorage.addLike(filmId, userId);
-        log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
-    }
-
-    @Override
-    public void removeLike(int filmId, int userId) {
-        findById(filmId);
-        userService.findById(userId);
-        filmLikeDbStorage.removeLike(filmId, userId);
-        log.info("Пользователь {} удалил лайк у фильма {}", userId, filmId);
-    }
-
-    @Override
-    public Collection<Film> getPopular(int count) {
-        log.debug("Запрошен список популярных фильмов, count={}", count);
-        return filmStorage.findAll().stream()
-                .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
-                .limit(count)
-                .toList();
-    }
-
+    // вспомогательные методы
     private void validateReleaseDate(Film film) {
-        if (film.getReleaseDate().isBefore(CINEMA_BIRTHDAY)) {
-            log.warn("Попытка добавить фильм с некорректной датой релиза: {}", film.getReleaseDate());
+        LocalDate firstFilmDate = LocalDate.of(1895, 12, 28);
+        if (film.getReleaseDate().isBefore(firstFilmDate)) {
             throw new ValidationException("Дата релиза не может быть раньше 28.12.1895");
+        }
+    }
+
+    private void checkAndSetMpa(Film film) {
+        if (film.getMpa() == null) {
+            film.setMpa(
+                    mpaStorage.getById(1)
+                            .orElseThrow(() -> new NotFoundException("MPA с id=1 не найден"))
+            );
+        } else {
+            int mpaId = film.getMpa().getId();
+            film.setMpa(
+                    mpaStorage.getById(mpaId)
+                            .orElseThrow(() -> new NotFoundException("MPA с id=" + mpaId + " не найден"))
+            );
+        }
+    }
+
+    private void checkAndSetGenres(Film film) {
+        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            Set<Genre> validatedGenres = new HashSet<>();
+            for (Genre genre : film.getGenres()) {
+                Genre validGenre = genreStorage.getById(genre.getId())
+                        .orElseThrow(() -> new NotFoundException("Жанр с id=" + genre.getId() + " не найден"));
+                validatedGenres.add(validGenre);
+            }
+            film.setGenres(validatedGenres); // убираем дубликаты
         }
     }
 }

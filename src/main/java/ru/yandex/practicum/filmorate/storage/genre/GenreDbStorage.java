@@ -2,13 +2,10 @@ package ru.yandex.practicum.filmorate.storage.genre;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Genre;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,25 +14,24 @@ public class GenreDbStorage implements GenreStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<Genre> genreRowMapper = new RowMapper<>() {
-        @Override
-        public Genre mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Genre genre = new Genre();
-            genre.setId(rs.getInt("id"));
-            genre.setName(rs.getString("name"));
-            return genre;
-        }
-    };
-
     @Override
-    public Collection<Genre> findAll() {
+    public List<Genre> getAll() {
         String sql = "SELECT * FROM genres";
-        return jdbcTemplate.query(sql, genreRowMapper);
+        return jdbcTemplate.query(sql,
+                (rs, rowNum) -> new Genre(
+                        rs.getInt("id"),
+                        rs.getString("name")
+                ));
     }
 
     @Override
-    public Optional<Genre> findById(int id) {
+    public Optional<Genre> getById(int id) {
         String sql = "SELECT * FROM genres WHERE id = ?";
-        return jdbcTemplate.query(sql, genreRowMapper, id).stream().findFirst();
+        List<Genre> result = jdbcTemplate.query(sql,
+                (rs, rowNum) -> new Genre(
+                        rs.getInt("id"),
+                        rs.getString("name")
+                ), id);
+        return result.stream().findFirst();
     }
 }
