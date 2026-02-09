@@ -95,13 +95,13 @@ public class FilmServiceImpl implements FilmService {
     private void checkAndSetMpa(Film film) {
         if (film.getMpa() == null) {
             film.setMpa(
-                    mpaStorage.getById(1)
+                    mpaStorage.findById(1)
                             .orElseThrow(() -> new NotFoundException("MPA с id=1 не найден"))
             );
         } else {
             int mpaId = film.getMpa().getId();
             film.setMpa(
-                    mpaStorage.getById(mpaId)
+                    mpaStorage.findById(mpaId)
                             .orElseThrow(() -> new NotFoundException("MPA с id=" + mpaId + " не найден"))
             );
         }
@@ -111,7 +111,7 @@ public class FilmServiceImpl implements FilmService {
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
             Set<Genre> validatedGenres = new HashSet<>();
             for (Genre genre : film.getGenres()) {
-                Genre validGenre = genreStorage.getById(genre.getId())
+                Genre validGenre = genreStorage.findById(genre.getId())
                         .orElseThrow(() -> new NotFoundException("Жанр с id=" + genre.getId() + " не найден"));
                 validatedGenres.add(validGenre);
             }
