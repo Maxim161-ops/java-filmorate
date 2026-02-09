@@ -29,7 +29,8 @@ class MpaDbStorageTest {
 
     @Test
     void testFindById() {
-        Mpa mpa = mpaStorage.findById(1);
+        Mpa mpa = mpaStorage.findById(1)
+                .orElseThrow(() -> new RuntimeException("MPA с id=1 не найден"));
         assertThat(mpa).isNotNull();
         assertThat(mpa.getName()).isEqualTo("G");
     }
