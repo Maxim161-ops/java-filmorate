@@ -59,19 +59,16 @@ public class FriendServiceImpl implements FriendService {
 
     @Override
     public Collection<User> getCommonFriends(int userId, int otherId) {
-        if (userId == otherId) {
-            throw new ValidationException("Нельзя искать общих друзей с самим собой");
-        }
 
-        User user = userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
-        User other = userStorage.findById(otherId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + otherId + " не найден"));
+        userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
-        return user.getFriends().stream()
-                .filter(other.getFriends()::contains)
+        userStorage.findById(otherId)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+
+        return friendsDbStorage.getCommonFriends(userId, otherId).stream()
                 .map(id -> userStorage.findById(id)
-                        .orElseThrow(() -> new NotFoundException("Пользователь с id=" + id + " не найден")))
+                        .orElseThrow(() -> new NotFoundException("Пользователь не найден")))
                 .toList();
     }
 }

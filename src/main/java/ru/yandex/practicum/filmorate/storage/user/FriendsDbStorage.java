@@ -16,7 +16,6 @@ public class FriendsDbStorage {
     public void addFriend(int userId, int friendId) {
         String sql = "MERGE INTO friends (user_id, friend_id) KEY(user_id, friend_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, userId, friendId);
-        jdbcTemplate.update(sql, friendId, userId);
     }
 
     public void removeFriend(int userId, int friendId) {
