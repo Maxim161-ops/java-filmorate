@@ -8,7 +8,6 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 import java.util.List;
 import java.util.Optional;
 
-
 @Component
 @RequiredArgsConstructor
 public class MpaDbStorage implements MpaStorage {
@@ -16,7 +15,7 @@ public class MpaDbStorage implements MpaStorage {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public List<Mpa> getAll() {
+    public List<Mpa> findAll() {
         String sql = "SELECT * FROM mpa";
         return jdbcTemplate.query(sql,
                 (rs, rowNum) -> new Mpa(
@@ -26,7 +25,7 @@ public class MpaDbStorage implements MpaStorage {
     }
 
     @Override
-    public Optional<Mpa> getById(int id) {
+    public Optional<Mpa> findById(int id) {
         String sql = "SELECT * FROM mpa WHERE id = ?";
         List<Mpa> result = jdbcTemplate.query(sql,
                 (rs, rowNum) -> new Mpa(

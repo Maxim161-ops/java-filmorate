@@ -15,7 +15,7 @@ public class GenreDbStorage implements GenreStorage {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public List<Genre> getAll() {
+    public List<Genre> findAll() {
         String sql = "SELECT * FROM genres";
         return jdbcTemplate.query(sql,
                 (rs, rowNum) -> new Genre(
@@ -25,7 +25,7 @@ public class GenreDbStorage implements GenreStorage {
     }
 
     @Override
-    public Optional<Genre> getById(int id) {
+    public Optional<Genre> findById(int id) {
         String sql = "SELECT * FROM genres WHERE id = ?";
         List<Genre> result = jdbcTemplate.query(sql,
                 (rs, rowNum) -> new Genre(

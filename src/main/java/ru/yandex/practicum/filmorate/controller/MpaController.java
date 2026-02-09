@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
@@ -21,6 +22,7 @@ public class MpaController {
 
     @GetMapping("/{id}")
     public Mpa findById(@PathVariable int id) {
-        return mpaStorage.findById(id);
+        return mpaStorage.findById(id)
+                .orElseThrow(() -> new NotFoundException("MPA с id=" + id + " не найден"));
     }
 }
