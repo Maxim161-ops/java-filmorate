@@ -12,33 +12,25 @@ import java.util.Collection;
 public class FriendsDbStorage {
 
     private final JdbcTemplate jdbc;
-
+    
     public void addFriend(int userId, int friendId) {
-        String sql = """
-            INSERT INTO friends(user_id, friend_id)
-            VALUES (?, ?)
-       """;
-        jdbc.update(sql, userId, friendId);
+        // Проверяем, что дружба ещё не существует
+        if (!getFriends(userId).contains(friendId)) {
+            String sql = "INSERT INTO friends(user_id, friend_id) VALUES (?, ?)";
+            jdbc.update(sql, userId, friendId);
+        }
     }
 
     public void removeFriend(int userId, int friendId) {
-        String sql = """
-            DELETE FROM friends
-            WHERE (user_id = ? AND friend_id = ?)
-               OR (user_id = ? AND friend_id = ?)
-       """;
-        int rows = jdbc.update(sql, userId, friendId, friendId, userId);
+        String sql = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?";
+        int rows = jdbc.update(sql, userId, friendId);
         if (rows == 0) {
             throw new NotFoundException("Дружба между пользователями не найдена");
         }
     }
 
     public Collection<Integer> getFriends(int userId) {
-        String sql = """
-            SELECT friend_id
-            FROM friends
-            WHERE user_id = ?
-       """;
+        String sql = "SELECT friend_id FROM friends WHERE user_id = ?";
         return jdbc.query(sql,
                 (rs, rowNum) -> rs.getInt("friend_id"),
                 userId);
@@ -50,7 +42,7 @@ public class FriendsDbStorage {
             FROM friends f1
             JOIN friends f2 ON f1.friend_id = f2.friend_id
             WHERE f1.user_id = ? AND f2.user_id = ?
-       """;
+        """;
         return jdbc.query(sql,
                 (rs, rowNum) -> rs.getInt("friend_id"),
                 userId,
