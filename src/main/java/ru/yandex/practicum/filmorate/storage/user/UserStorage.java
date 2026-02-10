@@ -16,4 +16,6 @@ public interface UserStorage {
     Optional<User> findById(int id);
 
     boolean userExists(int userId);
+
+    void delete(int id);
 }

@@ -25,6 +25,7 @@ public class UserDbStorage implements UserStorage {
     private final JdbcTemplate jdbc;
     private final UserRowMapper userRowMapper;
     private final FriendsDbStorage friendsDbStorage;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public User create(User user) {
@@ -108,5 +109,10 @@ public class UserDbStorage implements UserStorage {
                 userId
         );
         return count != null && count > 0;
+    }
+
+    @Override
+    public void delete(int id) {
+        jdbcTemplate.update("DELETE FROM users WHERE id = ?", id);
     }
 }

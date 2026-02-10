@@ -13,4 +13,6 @@ public interface UserService {
     Collection<User> findAll();
 
     User findById(int id);
+
+    void delete(int id);
 }

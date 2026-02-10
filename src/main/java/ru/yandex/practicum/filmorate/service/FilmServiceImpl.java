@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
+import java.util.List;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashSet;
@@ -117,5 +118,21 @@ public class FilmServiceImpl implements FilmService {
             }
             film.setGenres(validatedGenres); // убираем дубликаты
         }
+    }
+
+    @Override
+    public List<Film> getPopularFilms(int count) {
+        // Используем метод findAll() из filmStorage, который уже подгружает лайки
+        List<Film> films = (List<Film>) filmStorage.findAll();
+
+        // Сортируем по количеству лайков по убыванию
+        films.sort((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()));
+
+        // Ограничиваем количеством, пришедшим в запрос
+        if (films.size() > count) {
+            films = films.subList(0, count);
+        }
+
+        return films;
     }
 }

@@ -34,7 +34,7 @@ public class FilmGenreDbStorage {
         }
     }
 
-    public Set<Genre> getGenresForFilm(Long filmId) {
+    public Set<Genre> getGenresForFilm(int filmId) {
         return new LinkedHashSet<>(jdbcTemplate.query(
                 "SELECT g.id, g.name " +
                         "FROM film_genres fg " +

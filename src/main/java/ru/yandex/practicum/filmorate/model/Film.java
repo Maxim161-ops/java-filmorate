@@ -11,7 +11,7 @@ import java.util.Set;
 @Data
 public class Film {
 
-    private Long id;
+    private int id;
 
     @NotBlank(message = "Название фильма не может быть пустым")
     private String name;
@@ -31,5 +31,5 @@ public class Film {
 
     private Set<Genre> genres = new HashSet<>();
 
-    private Set<Long> likes = new HashSet<>();
+    private Set<Integer> likes = new HashSet<>();
 }

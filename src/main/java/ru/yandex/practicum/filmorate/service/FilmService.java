@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface FilmService {
 
@@ -13,5 +14,7 @@ public interface FilmService {
     Collection<Film> findAll();
 
     Film findById(int id);
+
+    List<Film> getPopularFilms(int count);
 
 }

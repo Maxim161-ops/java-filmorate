@@ -29,16 +29,10 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Film create(Film film) {
         validateReleaseDate(film);
-
-        // Если MPA не передан, ставим дефолтный (id = 1)
-        if (film.getMpa() == null) {
-            film.setMpa(new Mpa(1, null)); // name можно оставить null
-        }
+        if (film.getMpa() == null) film.setMpa(new Mpa(1, null));
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
-
-        String sql = "INSERT INTO films (name, description, release_date, duration, mpa_id) " +
-                "VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
@@ -50,14 +44,10 @@ public class FilmDbStorage implements FilmStorage {
             return ps;
         }, keyHolder);
 
-        // Получаем сгенерированный ID и устанавливаем в объект
-        Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
+        int generatedId = Objects.requireNonNull(keyHolder.getKey()).intValue();
         film.setId(generatedId);
 
-        // Сохраняем жанры фильма (если есть)
         filmGenreDbStorage.saveFilmGenres(film);
-
-        // Подгружаем лайки и жанры
         film.setLikes(filmLikeDbStorage.getLikes(generatedId));
         film.setGenres(filmGenreDbStorage.getGenresForFilm(generatedId));
 
@@ -67,16 +57,10 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Film update(Film film) {
         validateReleaseDate(film);
-
-        // Проверка существования фильма
         findById(film.getId())
                 .orElseThrow(() -> new NotFoundException("Фильм с id=" + film.getId() + " не найден"));
+        if (film.getMpa() == null) film.setMpa(new Mpa(1, null));
 
-        if (film.getMpa() == null) {
-            film.setMpa(new Mpa(1, null));
-        }
-
-        // Обновляем запись в БД
         String sql = "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ? WHERE id = ?";
         jdbcTemplate.update(sql,
                 film.getName(),
@@ -87,10 +71,7 @@ public class FilmDbStorage implements FilmStorage {
                 film.getId()
         );
 
-        // Обновляем жанры фильма
         filmGenreDbStorage.saveFilmGenres(film);
-
-        // Подгружаем лайки и жанры для корректного ответа
         film.setLikes(filmLikeDbStorage.getLikes(film.getId()));
         film.setGenres(filmGenreDbStorage.getGenresForFilm(film.getId()));
 
@@ -99,31 +80,23 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> findAll() {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
-                "f.mpa_id, m.name AS mpa_name " +
-                "FROM films f " +
-                "JOIN mpa m ON f.mpa_id = m.id";
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name " +
+                "FROM films f JOIN mpa m ON f.mpa_id = m.id";
 
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper);
 
         for (Film film : films) {
-            if (film.getMpa() == null) {
-                film.setMpa(new Mpa(1, null));
-            }
+            if (film.getMpa() == null) film.setMpa(new Mpa(1, null));
             film.setGenres(filmGenreDbStorage.getGenresForFilm(film.getId()));
             film.setLikes(filmLikeDbStorage.getLikes(film.getId()));
         }
-
         return films;
     }
 
     @Override
-    public Optional<Film> findById(long id) {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
-                "f.mpa_id, m.name AS mpa_name " +
-                "FROM films f " +
-                "JOIN mpa m ON f.mpa_id = m.id " +
-                "WHERE f.id = ?";
+    public Optional<Film> findById(int id) {
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name " +
+                "FROM films f JOIN mpa m ON f.mpa_id = m.id WHERE f.id = ?";
 
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper, id);
         if (films.isEmpty()) return Optional.empty();
@@ -136,9 +109,25 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
+    public List<Film> findPopularFilms(int count) {
+        List<Film> films = findAll();
+
+        // Сортируем по количеству лайков по убыванию
+        films.sort((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()));
+
+        // Ограничиваем количеством, которое пришло в запрос
+        if (films.size() > count) {
+            films = films.subList(0, count);
+        }
+
+        return films;
+    }
+
+    @Override
     public void validateReleaseDate(Film film) {
         if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
             throw new ValidationException("Дата релиза не может быть раньше 28.12.1895");
         }
     }
 }
+
