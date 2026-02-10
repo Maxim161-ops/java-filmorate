@@ -31,9 +31,7 @@ public class FriendServiceImpl implements FriendService {
 
         userStorage.findById(friendId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id=" + friendId + " не найден"));
-        
         friendsDbStorage.addFriend(userId, friendId);
-
         log.info("Пользователь {} добавил в друзья {}", userId, friendId);
     }
 

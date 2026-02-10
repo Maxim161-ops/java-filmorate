@@ -124,10 +124,8 @@ public class FilmServiceImpl implements FilmService {
     public List<Film> getPopularFilms(int count) {
         // Используем метод findAll() из filmStorage, который уже подгружает лайки
         List<Film> films = (List<Film>) filmStorage.findAll();
-
         // Сортируем по количеству лайков по убыванию
         films.sort((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()));
-
         // Ограничиваем количеством, пришедшим в запрос
         if (films.size() > count) {
             films = films.subList(0, count);
