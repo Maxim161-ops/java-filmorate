@@ -26,10 +26,10 @@ public class FriendsDbStorage {
 
     public void removeFriend(int userId, int friendId) {
         String sql = """
-        DELETE FROM friends
-        WHERE (user_id = ? AND friend_id = ?)
-           OR (user_id = ? AND friend_id = ?)
-        """;
+            DELETE FROM friends
+            WHERE (user_id = ? AND friend_id = ?)
+               OR (user_id = ? AND friend_id = ?)
+            """;
 
         int rows = jdbc.update(sql, userId, friendId, friendId, userId);
         if (rows == 0) {
