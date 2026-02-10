@@ -7,7 +7,6 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 
 import java.util.Collection;
 
-
 @Repository
 @RequiredArgsConstructor
 public class FriendsDbStorage {
