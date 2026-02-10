@@ -12,7 +12,7 @@ import java.util.Collection;
 public class FriendsDbStorage {
 
     private final JdbcTemplate jdbc;
-    
+
     public void addFriend(int userId, int friendId) {
         // Проверяем, что дружба ещё не существует
         if (!getFriends(userId).contains(friendId)) {
