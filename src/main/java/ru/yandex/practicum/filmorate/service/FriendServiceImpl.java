@@ -37,20 +37,19 @@ public class FriendServiceImpl implements FriendService {
 
     @Override
     public void removeFriend(int userId, int friendId) {
+        // Проверяем, что оба пользователя существуют
         userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
         userStorage.findById(friendId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id=" + friendId + " не найден"));
 
+        // Удаляем дружбу, если она есть
         try {
-            // Удаляем дружбу
             friendsDbStorage.removeFriend(userId, friendId);
+            log.info("Пользователь {} удалил из друзей {}", userId, friendId);
         } catch (NotFoundException e) {
-            // Игнорируем ошибку, если дружба уже не существует
             log.info("Дружба между {} и {} уже отсутствует", userId, friendId);
         }
-
-        log.info("Пользователь {} удалил из друзей {}", userId, friendId);
     }
 
     @Override
