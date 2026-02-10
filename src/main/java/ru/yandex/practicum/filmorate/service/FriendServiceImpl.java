@@ -44,7 +44,7 @@ public class FriendServiceImpl implements FriendService {
 
         try {
             // Удаляем дружбу
-            friendsDbStorage.addFriend(userId, friendId);
+            friendsDbStorage.removeFriend(userId, friendId);
         } catch (NotFoundException e) {
             // Игнорируем ошибку, если дружба уже не существует
             log.info("Дружба между {} и {} уже отсутствует", userId, friendId);
