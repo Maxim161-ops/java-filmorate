@@ -31,10 +31,8 @@ public class FriendServiceImpl implements FriendService {
 
         userStorage.findById(friendId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id=" + friendId + " не найден"));
-
-        // Двусторонняя дружба
+        
         friendsDbStorage.addFriend(userId, friendId);
-        friendsDbStorage.addFriend(friendId, userId);
 
         log.info("Пользователь {} добавил в друзья {}", userId, friendId);
     }
@@ -48,8 +46,7 @@ public class FriendServiceImpl implements FriendService {
 
         try {
             // Удаляем дружбу
-            friendsDbStorage.removeFriend(userId, friendId);
-            friendsDbStorage.removeFriend(friendId, userId);
+            friendsDbStorage.addFriend(userId, friendId);
         } catch (NotFoundException e) {
             // Игнорируем ошибку, если дружба уже не существует
             log.info("Дружба между {} и {} уже отсутствует", userId, friendId);
