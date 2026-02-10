@@ -32,7 +32,6 @@ public class FriendsDbStorage {
         """;
 
         int rows = jdbc.update(sql, userId, friendId, friendId, userId);
-
         if (rows == 0) {
             throw new NotFoundException("Дружба между пользователями не найдена");
         }
