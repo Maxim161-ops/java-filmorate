@@ -17,6 +17,5 @@ public interface FilmStorage {
     Optional<Film> findById(int id);
 
     List<Film> findPopularFilms(int count);
-
-    void validateReleaseDate(Film film);
 }
+

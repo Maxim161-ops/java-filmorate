@@ -8,6 +8,7 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmGenreDbStorage;
+import ru.yandex.practicum.filmorate.storage.film.FilmLikeDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
@@ -27,45 +28,39 @@ public class FilmServiceImpl implements FilmService {
     private final MpaStorage mpaStorage;
     private final GenreStorage genreStorage;
     private final FilmGenreDbStorage filmGenreDbStorage;
+    private final FilmLikeDbStorage filmLikeDbStorage;
 
     @Override
     public Film create(Film film) {
+
         validateReleaseDate(film);
-        checkAndSetMpa(film);
+
+        checkAndSetMpa(film, true);
+
         checkAndSetGenres(film);
 
-        // Сохраняем фильм
         Film createdFilm = filmStorage.create(film);
 
-        // Сохраняем жанры
         filmGenreDbStorage.saveFilmGenres(createdFilm);
 
-        // Подгружаем жанры (убираем дубликаты)
         createdFilm.setGenres(filmGenreDbStorage.getGenresForFilm(createdFilm.getId()));
 
+        createdFilm.setLikes(filmLikeDbStorage.getLikes(createdFilm.getId()));
+
         log.info("Создан фильм: id={}, name={}", createdFilm.getId(), createdFilm.getName());
+
         return createdFilm;
     }
 
     @Override
     public Film update(Film film) {
         validateReleaseDate(film);
+        Film existingFilm = getFilmOrThrow(film.getId());
 
-        // Проверяем, что фильм существует
-        filmStorage.findById(film.getId())
-                .orElseThrow(() -> new NotFoundException("Фильм с id=" + film.getId() + " не найден"));
-
-        checkAndSetMpa(film);
+        checkAndSetMpa(film, false);
         checkAndSetGenres(film);
 
         Film updatedFilm = filmStorage.update(film);
-
-        // Сохраняем жанры
-        filmGenreDbStorage.saveFilmGenres(updatedFilm);
-
-        // Подгружаем жанры
-        updatedFilm.setGenres(filmGenreDbStorage.getGenresForFilm(updatedFilm.getId()));
-
         log.info("Обновлён фильм: id={}, name={}", updatedFilm.getId(), updatedFilm.getName());
         return updatedFilm;
     }
@@ -93,13 +88,18 @@ public class FilmServiceImpl implements FilmService {
         }
     }
 
-    private void checkAndSetMpa(Film film) {
+    private void checkAndSetMpa(Film film, boolean isCreate) {
         if (film.getMpa() == null) {
-            film.setMpa(
-                    mpaStorage.findById(1)
-                            .orElseThrow(() -> new NotFoundException("MPA с id=1 не найден"))
-            );
+            if (isCreate) {
+                // При создании, если MPA не указан — ставим MPA с id=1
+                film.setMpa(
+                        mpaStorage.findById(1)
+                                .orElseThrow(() -> new NotFoundException("MPA с id=1 не найден"))
+                );
+            }
+            // При обновлении, если MPA отсутствует — ничего не делаем
         } else {
+            // Если MPA указан, проверяем его существование
             int mpaId = film.getMpa().getId();
             film.setMpa(
                     mpaStorage.findById(mpaId)
@@ -122,15 +122,11 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public List<Film> getPopularFilms(int count) {
-        // Используем метод findAll() из filmStorage, который уже подгружает лайки
-        List<Film> films = (List<Film>) filmStorage.findAll();
-        // Сортируем по количеству лайков по убыванию
-        films.sort((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()));
-        // Ограничиваем количеством, пришедшим в запрос
-        if (films.size() > count) {
-            films = films.subList(0, count);
-        }
+        return filmStorage.findPopularFilms(count);
+    }
 
-        return films;
+    private Film getFilmOrThrow(int filmId) {
+        return filmStorage.findById(filmId)
+                .orElseThrow(() -> new NotFoundException("Фильм с id=" + filmId + " не найден"));
     }
 }

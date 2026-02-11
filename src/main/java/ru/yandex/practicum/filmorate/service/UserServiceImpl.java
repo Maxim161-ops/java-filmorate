@@ -5,10 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.user.FriendsDbStorage;
+import ru.yandex.practicum.filmorate.storage.user.FriendsStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
+import java.util.HashSet;
 
 @Slf4j
 @Service
@@ -16,7 +17,7 @@ import java.util.Collection;
 public class UserServiceImpl implements UserService {
 
     private final UserStorage userStorage;
-    private final FriendsDbStorage friendsDbStorage;
+    private final FriendsStorage friendsStorage;
 
     @Override
     public User create(User user) {
@@ -32,6 +33,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User update(User user) {
+        userStorage.findById(user.getId())
+                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + user.getId() + " не найден"));
+
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
             log.debug("Name пустой при обновлении, подставлен login: {}", user.getLogin());
@@ -51,8 +55,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User findById(int id) {
-        return userStorage.findById(id).orElseThrow(() ->
-                new NotFoundException("Пользователь с id=" + id + " не найден"));
+        User user = userStorage.findById(id)
+                .orElseThrow(() ->
+                        new NotFoundException("Пользователь с id=" + id + " не найден")
+                );
+
+        user.setFriends(new HashSet<>(friendsStorage.getFriendsIds(id)));
+
+        return user;
     }
 
     @Override

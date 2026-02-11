@@ -6,13 +6,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.mapper.UserRowMapper;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.util.HashSet;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -24,16 +23,13 @@ public class UserDbStorage implements UserStorage {
 
     private final JdbcTemplate jdbc;
     private final UserRowMapper userRowMapper;
-    private final FriendsDbStorage friendsDbStorage;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
     public User create(User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
+
         String sql = "INSERT INTO users(email, login, name, birthday) VALUES (?, ?, ?, ?)";
 
         jdbc.update(connection -> {
@@ -47,19 +43,14 @@ public class UserDbStorage implements UserStorage {
 
         user.setId(Objects.requireNonNull(keyHolder.getKey()).intValue());
 
-        log.info("Создан пользователь: id={}, login={}, email={}", user.getId(), user.getLogin(), user.getEmail());
-
         return user;
     }
 
     @Override
     public User update(User user) {
-        this.findById(user.getId())
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-
         // Обновляем данные пользователя в БД
-        jdbc.update(
-                "UPDATE users SET email=?, login=?, name=?, birthday=? WHERE id=?",
+        String sql = "UPDATE users SET email=?, login=?, name=?, birthday=? WHERE id=?";
+        jdbc.update(sql,
                 user.getEmail(),
                 user.getLogin(),
                 user.getName(),
@@ -67,48 +58,21 @@ public class UserDbStorage implements UserStorage {
                 user.getId()
         );
 
-        log.info("Обновлён пользователь: id={}, login={}, email={}", user.getId(), user.getLogin(), user.getEmail());
         return user;
     }
 
     @Override
     public Optional<User> findById(int id) {
-        Optional<User> userOpt = jdbc.query(
-                "SELECT * FROM users WHERE id=?",
-                userRowMapper,
-                id
-        ).stream().findFirst();
-
-        userOpt.ifPresent(user -> {
-            user.setFriends(new HashSet<>(friendsDbStorage.getFriends(user.getId())));
-            log.debug("Загружен пользователь {} с {} друзьями", user.getId(), user.getFriends().size());
-        });
-
-        if (userOpt.isEmpty()) {
-            log.warn("Пользователь с id={} не найден", id);
-        }
-
-        return userOpt;
+        String sql = "SELECT * FROM users WHERE id=?";
+        return jdbc.query(sql, userRowMapper, id)
+                .stream()
+                .findFirst();
     }
 
     @Override
     public List<User> findAll() {
-        List<User> users = jdbc.query("SELECT * FROM users", userRowMapper);
-
-        for (User user : users) {
-            user.setFriends(new HashSet<>(friendsDbStorage.getFriends(user.getId())));
-        }
-
-        return users;
-    }
-
-    public boolean userExists(int userId) {
-        Integer count = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM users WHERE id = ?",
-                Integer.class,
-                userId
-        );
-        return count != null && count > 0;
+        String sql = "SELECT * FROM users";
+        return jdbc.query(sql, userRowMapper);
     }
 
     @Override

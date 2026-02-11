@@ -5,14 +5,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mapper.FilmRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Mpa;
+
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,15 +19,10 @@ import java.util.Optional;
 public class FilmDbStorage implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
-    private final FilmGenreDbStorage filmGenreDbStorage;
     private final FilmRowMapper filmRowMapper;
-    private final FilmLikeDbStorage filmLikeDbStorage;
 
     @Override
     public Film create(Film film) {
-        validateReleaseDate(film);
-        if (film.getMpa() == null) film.setMpa(new Mpa(1, null));
-
         KeyHolder keyHolder = new GeneratedKeyHolder();
         String sql = "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
 
@@ -44,23 +36,13 @@ public class FilmDbStorage implements FilmStorage {
             return ps;
         }, keyHolder);
 
-        int generatedId = Objects.requireNonNull(keyHolder.getKey()).intValue();
-        film.setId(generatedId);
-
-        filmGenreDbStorage.saveFilmGenres(film);
-        film.setLikes(filmLikeDbStorage.getLikes(generatedId));
-        film.setGenres(filmGenreDbStorage.getGenresForFilm(generatedId));
+        film.setId(Objects.requireNonNull(keyHolder.getKey()).intValue());
 
         return film;
     }
 
     @Override
     public Film update(Film film) {
-        validateReleaseDate(film);
-        findById(film.getId())
-                .orElseThrow(() -> new NotFoundException("Фильм с id=" + film.getId() + " не найден"));
-        if (film.getMpa() == null) film.setMpa(new Mpa(1, null));
-
         String sql = "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ? WHERE id = ?";
         jdbcTemplate.update(sql,
                 film.getName(),
@@ -70,10 +52,6 @@ public class FilmDbStorage implements FilmStorage {
                 film.getMpa().getId(),
                 film.getId()
         );
-
-        filmGenreDbStorage.saveFilmGenres(film);
-        film.setLikes(filmLikeDbStorage.getLikes(film.getId()));
-        film.setGenres(filmGenreDbStorage.getGenresForFilm(film.getId()));
 
         return film;
     }
@@ -85,11 +63,6 @@ public class FilmDbStorage implements FilmStorage {
 
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper);
 
-        for (Film film : films) {
-            if (film.getMpa() == null) film.setMpa(new Mpa(1, null));
-            film.setGenres(filmGenreDbStorage.getGenresForFilm(film.getId()));
-            film.setLikes(filmLikeDbStorage.getLikes(film.getId()));
-        }
         return films;
     }
 
@@ -99,13 +72,8 @@ public class FilmDbStorage implements FilmStorage {
                 "FROM films f JOIN mpa m ON f.mpa_id = m.id WHERE f.id = ?";
 
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper, id);
-        if (films.isEmpty()) return Optional.empty();
 
-        Film film = films.get(0);
-        film.setGenres(filmGenreDbStorage.getGenresForFilm(film.getId()));
-        film.setLikes(filmLikeDbStorage.getLikes(film.getId()));
-
-        return Optional.of(film);
+        return films.stream().findFirst();
     }
 
     @Override
@@ -121,13 +89,6 @@ public class FilmDbStorage implements FilmStorage {
         }
 
         return films;
-    }
-
-    @Override
-    public void validateReleaseDate(Film film) {
-        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            throw new ValidationException("Дата релиза не может быть раньше 28.12.1895");
-        }
     }
 }
 
