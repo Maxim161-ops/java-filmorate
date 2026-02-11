@@ -15,9 +15,14 @@ public class FriendsDbStorage implements FriendsStorage {
 
     @Override
     public void addFriend(int userId, int friendId) {
-        // Добавляем дружбу в обе стороны
-        jdbc.update("INSERT INTO friends (user_id, friend_id) VALUES (?, ?) ON CONFLICT DO NOTHING", userId, friendId);
-        jdbc.update("INSERT INTO friends (user_id, friend_id) VALUES (?, ?) ON CONFLICT DO NOTHING", friendId, userId);
+        // Сначала проверяем, есть ли уже запись
+        String checkSql = "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ?";
+        Integer count = jdbc.queryForObject(checkSql, Integer.class, userId, friendId);
+
+        if (count != null && count == 0) {
+            String sql = "INSERT INTO friends (user_id, friend_id) VALUES (?, ?)";
+            jdbc.update(sql, userId, friendId);
+        }
     }
 
     @Override
