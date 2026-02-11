@@ -27,12 +27,15 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User create(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+            log.debug("Name пустой, подставлен login: {}", user.getLogin());
+        }
 
+        String sql = "INSERT INTO users (email, login, name, birthday) VALUES (?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        String sql = "INSERT INTO users(email, login, name, birthday) VALUES (?, ?, ?, ?)";
-
-        jdbc.update(connection -> {
+        jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
             ps.setString(1, user.getEmail());
             ps.setString(2, user.getLogin());
@@ -41,8 +44,12 @@ public class UserDbStorage implements UserStorage {
             return ps;
         }, keyHolder);
 
-        user.setId(Objects.requireNonNull(keyHolder.getKey()).intValue());
+        // Здесь безопасно получаем ID
+        user.setId(Optional.ofNullable(keyHolder.getKey())
+                .map(Number::intValue)
+                .orElseThrow(() -> new IllegalStateException("Не удалось получить сгенерированный ID пользователя")));
 
+        log.info("Создан пользователь: id={}, login={}", user.getId(), user.getLogin());
         return user;
     }
 
