@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -18,6 +19,7 @@ public class FriendServiceImpl implements FriendService {
 
     private final UserStorage userStorage;
     private final FriendsStorage friendsStorage;
+    private final JdbcTemplate jdbc;
 
     @Override
     public void addFriend(int userId, int friendId) {
@@ -35,23 +37,28 @@ public class FriendServiceImpl implements FriendService {
 
     @Override
     public void removeFriend(int userId, int friendId) {
-
-        if (userId == friendId) {
-            throw new ValidationException("Нельзя удалить самого себя из друзей");
+        // Сначала проверяем, существует ли пользователь
+        String userCheck = "SELECT COUNT(*) FROM users WHERE id = ?";
+        Integer userExists = jdbc.queryForObject(userCheck, Integer.class, userId);
+        if (userExists == null || userExists == 0) {
+            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
         }
 
-        checkUserExists(userId);
-        checkUserExists(friendId);
-
-        int removed = friendsStorage.removeFriend(userId, friendId);
-
-        if (removed == 0) {
-            throw new NotFoundException(
-                    "Дружба между пользователями " + userId + " и " + friendId + " не найдена"
-            );
+        // Проверяем, существует ли друг
+        String friendCheck = "SELECT COUNT(*) FROM users WHERE id = ?";
+        Integer friendExists = jdbc.queryForObject(friendCheck, Integer.class, friendId);
+        if (friendExists == null || friendExists == 0) {
+            throw new NotFoundException("Пользователь с id=" + friendId + " не найден");
         }
 
-        log.info("Пользователь {} удалил из друзей пользователя {}", userId, friendId);
+        // Удаляем запись дружбы
+        String deleteSql = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?";
+        int rows = jdbc.update(deleteSql, userId, friendId);
+
+        // Если записи не было — возвращаем 404
+        if (rows == 0) {
+            throw new NotFoundException("Дружба между пользователями " + userId + " и " + friendId + " не найдена");
+        }
     }
 
     @Override
