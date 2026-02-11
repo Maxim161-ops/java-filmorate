@@ -32,23 +32,21 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Film create(Film film) {
-
         validateReleaseDate(film);
-
         checkAndSetMpa(film, true);
-
         checkAndSetGenres(film);
 
         Film createdFilm = filmStorage.create(film);
 
+        // Сохраняем жанры
         filmGenreDbStorage.saveFilmGenres(createdFilm);
 
+        // Подтягиваем актуальные жанры из БД
         createdFilm.setGenres(filmGenreDbStorage.getGenresForFilm(createdFilm.getId()));
 
         createdFilm.setLikes(filmLikeDbStorage.getLikes(createdFilm.getId()));
 
         log.info("Создан фильм: id={}, name={}", createdFilm.getId(), createdFilm.getName());
-
         return createdFilm;
     }
 
@@ -61,6 +59,11 @@ public class FilmServiceImpl implements FilmService {
         checkAndSetGenres(film);
 
         Film updatedFilm = filmStorage.update(film);
+
+        // Обновляем жанры
+        filmGenreDbStorage.saveFilmGenres(updatedFilm);
+        updatedFilm.setGenres(filmGenreDbStorage.getGenresForFilm(updatedFilm.getId()));
+
         log.info("Обновлён фильм: id={}, name={}", updatedFilm.getId(), updatedFilm.getName());
         return updatedFilm;
     }

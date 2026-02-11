@@ -15,16 +15,17 @@ public class FriendsDbStorage implements FriendsStorage {
 
     @Override
     public void addFriend(int userId, int friendId) {
-        jdbc.update(
-                "INSERT INTO friends (user_id, friend_id) VALUES (?, ?)",
-                userId, friendId
-        );
+        // Добавляем дружбу в обе стороны
+        jdbc.update("INSERT INTO friends (user_id, friend_id) VALUES (?, ?) ON CONFLICT DO NOTHING", userId, friendId);
+        jdbc.update("INSERT INTO friends (user_id, friend_id) VALUES (?, ?) ON CONFLICT DO NOTHING", friendId, userId);
     }
 
     @Override
     public int removeFriend(int userId, int friendId) {
-        String sql = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?";
-        return jdbc.update(sql, userId, friendId);
+        // Удаляем дружбу в обе стороны
+        int removed1 = jdbc.update("DELETE FROM friends WHERE user_id = ? AND friend_id = ?", userId, friendId);
+        int removed2 = jdbc.update("DELETE FROM friends WHERE user_id = ? AND friend_id = ?", friendId, userId);
+        return removed1 + removed2;
     }
 
     @Override
