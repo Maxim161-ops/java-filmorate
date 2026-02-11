@@ -71,6 +71,10 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public Collection<Film> findAll() {
         Collection<Film> films = filmStorage.findAll();
+        for (Film film : films) {
+            film.setGenres(filmGenreDbStorage.getGenresForFilm(film.getId()));
+            film.setLikes(filmLikeDbStorage.getLikes(film.getId()));
+        }
         log.debug("Получен список всех фильмов, count={}", films.size());
         return films;
     }
@@ -79,6 +83,13 @@ public class FilmServiceImpl implements FilmService {
     public Film findById(int id) {
         Film film = filmStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Фильм с id=" + id + " не найден"));
+
+        // Подтягиваем жанры из БД
+        film.setGenres(filmGenreDbStorage.getGenresForFilm(id));
+
+        // Подтягиваем лайки, если нужно
+        film.setLikes(filmLikeDbStorage.getLikes(id));
+
         log.debug("Найден фильм: id={}, name={}", film.getId(), film.getName());
         return film;
     }
