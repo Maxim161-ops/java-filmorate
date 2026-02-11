@@ -5,12 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.FriendsStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -23,65 +24,48 @@ public class FriendServiceImpl implements FriendService {
 
     @Override
     public void addFriend(int userId, int friendId) {
-        if (userId == friendId) {
-            throw new ValidationException("Нельзя добавить самого себя в друзья");
-        }
-
         checkUserExists(userId);
         checkUserExists(friendId);
 
         friendsStorage.addFriend(userId, friendId);
-
-        log.info("Пользователь {} добавил в друзья пользователя {}", userId, friendId);
+        log.info("Пользователь id={} добавил в друзья пользователя id={}", userId, friendId);
     }
 
     @Override
     public void removeFriend(int userId, int friendId) {
-        // Сначала проверяем, существует ли пользователь
-        String userCheck = "SELECT COUNT(*) FROM users WHERE id = ?";
-        Integer userExists = jdbc.queryForObject(userCheck, Integer.class, userId);
-        if (userExists == null || userExists == 0) {
-            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
-        }
-
-        // Проверяем, существует ли друг
-        String friendCheck = "SELECT COUNT(*) FROM users WHERE id = ?";
-        Integer friendExists = jdbc.queryForObject(friendCheck, Integer.class, friendId);
-        if (friendExists == null || friendExists == 0) {
-            throw new NotFoundException("Пользователь с id=" + friendId + " не найден");
-        }
-
-        // Удаляем запись дружбы
-        String deleteSql = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?";
-        int rows = jdbc.update(deleteSql, userId, friendId);
-
-        // Если записи не было — возвращаем 404
-        if (rows == 0) {
-            throw new NotFoundException("Дружба между пользователями " + userId + " и " + friendId + " не найдена");
-        }
-    }
-
-    @Override
-    public List<User> getFriends(int userId) {
-        userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
-
-        return friendsStorage.getFriendsIds(userId).stream()
-                .map(id -> userStorage.findById(id)
-                        .orElseThrow(() -> new NotFoundException("Пользователь с id=" + id + " не найден")))
-                .toList();
-    }
-
-    @Override
-    public List<User> getCommonFriends(int userId, int otherId) {
         checkUserExists(userId);
-        checkUserExists(otherId);
+        checkUserExists(friendId);
 
-        return friendsStorage.getCommonFriends(userId, otherId).stream()
-                .map(id -> userStorage.findById(id)
-                        .orElseThrow(() ->
-                                new NotFoundException("Пользователь с id=" + id + " не найден")))
-                .toList();
+        friendsStorage.removeFriend(userId, friendId);
+        log.info("Пользователь id={} удалил из друзей пользователя id={}", userId, friendId);
+    }
+
+    @Override
+    public Collection<User> getFriends(int userId) {
+        checkUserExists(userId);
+
+        Set<User> friends = new HashSet<>();
+        for (Integer id : friendsStorage.getFriendsIds(userId)) {
+            userStorage.findById(id).ifPresent(friends::add);
+        }
+        return friends;
+    }
+
+    @Override
+    public Collection<User> getCommonFriends(int userId, int otherUserId) {
+        checkUserExists(userId);
+        checkUserExists(otherUserId);
+
+        Set<Integer> friends1 = new HashSet<>(friendsStorage.getFriendsIds(userId));
+        Set<Integer> friends2 = new HashSet<>(friendsStorage.getFriendsIds(otherUserId));
+
+        friends1.retainAll(friends2);
+
+        Set<User> commonFriends = new HashSet<>();
+        for (Integer id : friends1) {
+            userStorage.findById(id).ifPresent(commonFriends::add);
+        }
+        return commonFriends;
     }
 
     private void checkUserExists(int userId) {
