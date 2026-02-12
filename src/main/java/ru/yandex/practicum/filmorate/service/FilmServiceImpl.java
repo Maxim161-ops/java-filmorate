@@ -108,23 +108,33 @@ public class FilmServiceImpl implements FilmService {
     }
 
     private void checkAndSetGenres(Film film) {
-        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
-            LinkedHashMap<Integer, Genre> map = film.getGenres().stream()
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toMap(
-                            Genre::getId,
-                            genre -> {
-                                // Проверяем, есть ли жанр в базе
-                                return genreStorage.findById(genre.getId())
-                                        .orElseThrow(() -> new RuntimeException(
-                                                "Жанр с id=" + genre.getId() + " не найден"));
-                            },
-                            (g1, g2) -> g1,
-                            LinkedHashMap::new
-                    ));
-
-            film.setGenres(new LinkedHashSet<>(map.values())); // убираем дубликаты и сохраняем порядок
+        if (film.getGenres() == null || film.getGenres().isEmpty()) {
+            return;
         }
+
+        // LinkedHashMap сохраняет порядок добавления
+        LinkedHashMap<Integer, Genre> map = new LinkedHashMap<>();
+
+        for (Genre genre : film.getGenres()) {
+            if (genre == null) {
+                continue; // пропускаем null
+            }
+
+            int id = genre.getId();
+            // Если жанр уже добавлен, пропускаем (убираем дубликаты)
+            if (map.containsKey(id)) {
+                continue;
+            }
+
+            // Проверяем, есть ли жанр в хранилище
+            Genre validGenre = genreStorage.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Жанр с id=" + id + " не найден"));
+
+            map.put(id, validGenre);
+        }
+
+        // Сохраняем уникальные жанры в порядке добавления
+        film.setGenres(new LinkedHashSet<>(map.values()));
     }
 
     @Override
