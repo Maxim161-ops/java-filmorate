@@ -25,6 +25,10 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User create(User user) {
+        // это что бы тесты не падали в git
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
 
         String sql = "INSERT INTO users (email, login, name, birthday) VALUES (?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
