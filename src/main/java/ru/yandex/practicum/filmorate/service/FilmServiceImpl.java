@@ -109,13 +109,17 @@ public class FilmServiceImpl implements FilmService {
 
     private void checkAndSetGenres(Film film) {
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
-            Set<Genre> validatedGenres = new HashSet<>();
-            for (Genre genre : film.getGenres()) {
-                Genre validGenre = genreStorage.findById(genre.getId())
-                        .orElseThrow(() -> new NotFoundException("Жанр с id=" + genre.getId() + " не найден"));
-                validatedGenres.add(validGenre);
-            }
-            film.setGenres(validatedGenres); // убираем дубликаты
+            // Убираем null и дубликаты по id, сохраняем порядок
+            LinkedHashMap<Integer, Genre> map = film.getGenres().stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(
+                            Genre::getId,
+                            g -> g,
+                            (g1, g2) -> g1,
+                            LinkedHashMap::new
+                    ));
+
+            film.setGenres(new LinkedHashSet<>(map.values())); // просто передаём в конструктор
         }
     }
 

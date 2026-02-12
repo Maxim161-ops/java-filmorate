@@ -25,7 +25,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User create(User user) {
-        // это что бы тесты не падали в git
+        // это нужно что бы тесты не падали в git
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
