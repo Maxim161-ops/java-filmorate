@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -11,6 +10,7 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -20,7 +20,6 @@ public class FriendServiceImpl implements FriendService {
 
     private final UserStorage userStorage;
     private final FriendsStorage friendsStorage;
-    private final JdbcTemplate jdbc;
 
     @Override
     public void addFriend(int userId, int friendId) {
@@ -43,12 +42,7 @@ public class FriendServiceImpl implements FriendService {
     @Override
     public Collection<User> getFriends(int userId) {
         checkUserExists(userId);
-
-        Set<User> friends = new HashSet<>();
-        for (Integer id : friendsStorage.getFriendsIds(userId)) {
-            userStorage.findById(id).ifPresent(friends::add);
-        }
-        return friends;
+        return new HashSet<>(friendsStorage.getFriends(userId));
     }
 
     @Override
@@ -56,15 +50,23 @@ public class FriendServiceImpl implements FriendService {
         checkUserExists(userId);
         checkUserExists(otherUserId);
 
-        Set<Integer> friends1 = new HashSet<>(friendsStorage.getFriendsIds(userId));
-        Set<Integer> friends2 = new HashSet<>(friendsStorage.getFriendsIds(otherUserId));
+        // Получаем сразу объекты User для обоих пользователей
+        List<User> friendsOfUser1 = friendsStorage.getFriends(userId);
+        List<User> friendsOfUser2 = friendsStorage.getFriends(otherUserId);
 
-        friends1.retainAll(friends2);
+        // Пересекаем по id
+        Set<Integer> friends2Ids = new HashSet<>();
+        for (User u : friendsOfUser2) {
+            friends2Ids.add(u.getId());
+        }
 
         Set<User> commonFriends = new HashSet<>();
-        for (Integer id : friends1) {
-            userStorage.findById(id).ifPresent(commonFriends::add);
+        for (User u : friendsOfUser1) {
+            if (friends2Ids.contains(u.getId())) {
+                commonFriends.add(u);
+            }
         }
+
         return commonFriends;
     }
 

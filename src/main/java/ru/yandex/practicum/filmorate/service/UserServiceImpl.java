@@ -5,11 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.user.FriendsStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
-import java.util.HashSet;
 
 @Slf4j
 @Service
@@ -17,7 +15,6 @@ import java.util.HashSet;
 public class UserServiceImpl implements UserService {
 
     private final UserStorage userStorage;
-    private final FriendsStorage friendsStorage;
 
     @Override
     public User create(User user) {
@@ -33,8 +30,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User update(User user) {
-        userStorage.findById(user.getId())
-                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + user.getId() + " не найден"));
+
+        User existingUser = getUserOrThrow(user.getId());
 
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
@@ -55,14 +52,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User findById(int id) {
-        User user = userStorage.findById(id)
+        return userStorage.findById(id)
                 .orElseThrow(() ->
                         new NotFoundException("Пользователь с id=" + id + " не найден")
                 );
-
-        user.setFriends(new HashSet<>(friendsStorage.getFriendsIds(id)));
-
-        return user;
     }
 
     @Override
@@ -70,5 +63,10 @@ public class UserServiceImpl implements UserService {
         userStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         userStorage.delete(id);
+    }
+
+    private User getUserOrThrow(int userId) {
+        return userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
     }
 }

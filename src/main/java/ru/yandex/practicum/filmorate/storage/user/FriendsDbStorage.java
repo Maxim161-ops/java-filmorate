@@ -3,7 +3,9 @@ package ru.yandex.practicum.filmorate.storage.user;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.model.User;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 
@@ -45,5 +47,25 @@ public class FriendsDbStorage implements FriendsStorage {
         WHERE f1.user_id = ? AND f2.user_id = ?
     """;
         return jdbc.query(sql, (rs, rowNum) -> rs.getInt("friend_id"), userId, otherId);
+    }
+
+    @Override
+    public List<User> getFriends(int userId) {
+        String sql = """
+        SELECT u.id, u.email, u.login, u.name, u.birthday
+        FROM users u
+        JOIN friends f ON u.id = f.friend_id
+        WHERE f.user_id = ?
+    """;
+
+        return jdbc.query(sql, (rs, rowNum) -> {
+            User user = new User();
+            user.setId(rs.getInt("id"));
+            user.setEmail(rs.getString("email"));
+            user.setLogin(rs.getString("login"));
+            user.setName(rs.getString("name"));
+            user.setBirthday(rs.getObject("birthday", LocalDate.class));
+            return user;
+        }, userId);
     }
 }

@@ -22,19 +22,14 @@ public class UserDbStorage implements UserStorage {
 
     private final JdbcTemplate jdbc;
     private final UserRowMapper userRowMapper;
-    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public User create(User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-            log.debug("Name пустой, подставлен login: {}", user.getLogin());
-        }
-
+        
         String sql = "INSERT INTO users (email, login, name, birthday) VALUES (?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        jdbcTemplate.update(connection -> {
+        jdbc.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
             ps.setString(1, user.getEmail());
             ps.setString(2, user.getLogin());
@@ -83,6 +78,6 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void delete(int id) {
-        jdbcTemplate.update("DELETE FROM users WHERE id = ?", id);
+        jdbc.update("DELETE FROM users WHERE id = ?", id);
     }
 }

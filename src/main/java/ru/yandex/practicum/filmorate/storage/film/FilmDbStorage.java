@@ -19,8 +19,6 @@ public class FilmDbStorage implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
     private final FilmRowMapper filmRowMapper;
-    private final FilmLikeDbStorage filmLikeDbStorage;
-    private final JdbcTemplate jdbc;
 
     @Override
     public Film create(Film film) {
@@ -59,30 +57,31 @@ public class FilmDbStorage implements FilmStorage {
         String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name " +
                 "FROM films f JOIN mpa m ON f.mpa_id = m.id";
 
-        List<Film> films = jdbcTemplate.query(sql, filmRowMapper);
-
-        // Подгружаем лайки для корректной сортировки
-        for (Film film : films) {
-            film.setLikes(filmLikeDbStorage.getLikes(film.getId()));
-        }
-
-        return films;
+        return jdbcTemplate.query(sql, filmRowMapper);
     }
 
     @Override
     public Optional<Film> findById(int id) {
         String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name " +
                 "FROM films f JOIN mpa m ON f.mpa_id = m.id WHERE f.id = ?";
+
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper, id);
-        films.forEach(film -> film.setLikes(filmLikeDbStorage.getLikes(film.getId())));
         return films.stream().findFirst();
     }
 
     @Override
     public List<Film> findPopularFilms(int count) {
-        List<Film> films = findAll();
-        films.sort((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()));
-        return films.size() > count ? films.subList(0, count) : films;
+        String sql = """
+        SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name
+        FROM films f
+        JOIN mpa m ON f.mpa_id = m.id
+        LEFT JOIN film_likes fl ON f.id = fl.film_id
+        GROUP BY f.id
+        ORDER BY COUNT(fl.user_id) DESC
+        LIMIT ?
+    """;
+
+        return jdbcTemplate.query(sql, filmRowMapper, count);
     }
 
     public void saveFilmGenres(Film film) {

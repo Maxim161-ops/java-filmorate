@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
+import ru.yandex.practicum.filmorate.service.MpaService;
 
 import java.util.Collection;
 
@@ -13,16 +13,16 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class MpaController {
 
-    private final MpaStorage mpaStorage;
+    private final MpaService mpaService;
+
 
     @GetMapping
     public Collection<Mpa> findAll() {
-        return mpaStorage.findAll();
+        return mpaService.findAll();
     }
 
     @GetMapping("/{id}")
     public Mpa findById(@PathVariable int id) {
-        return mpaStorage.findById(id)
-                .orElseThrow(() -> new NotFoundException("MPA с id=" + id + " не найден"));
+        return mpaService.findById(id);
     }
 }
