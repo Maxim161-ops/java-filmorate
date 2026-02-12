@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.GenreNotFoundException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -128,7 +129,7 @@ public class FilmServiceImpl implements FilmService {
 
             // Проверяем, есть ли жанр в хранилище
             Genre validGenre = genreStorage.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Жанр с id=" + id + " не найден"));
+                    .orElseThrow(() -> new GenreNotFoundException(id));
 
             map.put(id, validGenre);
         }
