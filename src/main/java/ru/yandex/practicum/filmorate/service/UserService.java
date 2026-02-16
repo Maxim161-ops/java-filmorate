@@ -14,11 +14,5 @@ public interface UserService {
 
     User findById(int id);
 
-    void addFriend(int userId, int friendId);
-
-    void removeFriend(int userId, int friendId);
-
-    Collection<User> getFriends(int userId);
-
-    Collection<User> getCommonFriends(int userId, int otherId);
+    void delete(int id);
 }

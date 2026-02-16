@@ -1,104 +1,172 @@
 package ru.yandex.practicum.filmorate.service;
 
-
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.GenreNotFoundException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.storage.film.FilmGenreDbStorage;
+import ru.yandex.practicum.filmorate.storage.film.FilmLikeDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
+import java.util.*;
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.Comparator;
+import java.util.stream.Collectors;
 
-@Slf4j
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class FilmServiceImpl implements FilmService {
 
-    private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
-
     private final FilmStorage filmStorage;
-    private final UserService userService;
-
-    public FilmServiceImpl(FilmStorage filmStorage, UserService userService) {
-        this.filmStorage = filmStorage;
-        this.userService = userService;
-    }
+    private final MpaStorage mpaStorage;
+    private final GenreStorage genreStorage;
+    private final FilmGenreDbStorage filmGenreDbStorage;
+    private final FilmLikeDbStorage filmLikeDbStorage;
 
     @Override
     public Film create(Film film) {
-        validateReleaseDate(film); // Проверка даты перед созданием
-        Film created = filmStorage.create(film);
-        log.info("Создан фильм: id={}, name={}", created.getId(), created.getName());
-        return created;
+        validateReleaseDate(film);
+        checkAndSetMpa(film, true);
+        checkAndSetGenres(film);
+
+        Film createdFilm = filmStorage.create(film);
+
+        // Сохраняем жанры
+        filmGenreDbStorage.saveFilmGenres(createdFilm);
+
+        log.info("Создан фильм: id={}, name={}", createdFilm.getId(), createdFilm.getName());
+        return createdFilm;
     }
 
     @Override
     public Film update(Film film) {
         validateReleaseDate(film);
+        Film existingFilm = getFilmOrThrow(film.getId());
 
-        Film existing = filmStorage.findById(film.getId()).orElseThrow(() ->
-                        new NotFoundException("Фильм с id=" + film.getId() + " не найден"));
+        checkAndSetMpa(film, false);
+        checkAndSetGenres(film);
 
-        Film updated = filmStorage.update(film);
+        Film updatedFilm = filmStorage.update(film);
 
-        log.info("Обновлён фильм: id={}, name={}", updated.getId(), updated.getName());
-        return updated;
+        // Обновляем жанры
+        filmGenreDbStorage.saveFilmGenres(updatedFilm);
+
+        log.info("Обновлён фильм: id={}, name={}", updatedFilm.getId(), updatedFilm.getName());
+        return updatedFilm;
     }
 
     @Override
     public Collection<Film> findAll() {
         Collection<Film> films = filmStorage.findAll();
-        log.debug("Получен список фильмов, count={}", films.size());
+
+        // заполняем жанры и лайки через новый метод
+        enrichFilms(films);
+
+        log.debug("Получен список всех фильмов, count={}", films.size());
         return films;
     }
 
     @Override
     public Film findById(int id) {
-        return filmStorage.findById(id).orElseThrow(() ->
-                        new NotFoundException("Фильм с id=" + id + " не найден"));
+        Film film = getFilmOrThrow(id);
+
+        // используем enrichFilms для одного фильма
+        enrichFilms(List.of(film));
+
+        log.debug("Найден фильм: id={}, name={}", film.getId(), film.getName());
+        return film;
     }
 
-    @Override
-    public void addLike(int filmId, int userId) {
-        Film film = findById(filmId);
-        userService.findById(userId); // проверка существования пользователя
-        boolean added = film.getLikes().add(userId);
-        if (added) {
-            log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
-        }
-    }
-
-    @Override
-    public void removeLike(int filmId, int userId) {
-        Film film = findById(filmId);
-        userService.findById(userId);
-
-        boolean removed = film.getLikes().remove(userId);
-        if (removed) {
-            log.info("Пользователь {} удалил лайк у фильма {}", userId, filmId);
-        } else {
-            log.info("Лайка пользователя {} у фильма {} не было", userId, filmId);
-        }
-    }
-
-    @Override
-    public Collection<Film> getPopular(int count) {
-        log.debug("Запрошен список популярных фильмов, count={}", count);
-        return filmStorage.findAll().stream()
-                .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
-                .limit(count)
-                .toList();
-    }
-
+    // вспомогательные методы
     private void validateReleaseDate(Film film) {
-        if (film.getReleaseDate().isBefore(CINEMA_BIRTHDAY)) {
-            throw new ValidationException(
-                    "Дата релиза не может быть раньше 28.12.1895"
+        LocalDate firstFilmDate = LocalDate.of(1895, 12, 28);
+        if (film.getReleaseDate().isBefore(firstFilmDate)) {
+            throw new ValidationException("Дата релиза не может быть раньше 28.12.1895");
+        }
+    }
+
+    private void checkAndSetMpa(Film film, boolean isCreate) {
+        if (film.getMpa() == null) {
+            if (isCreate) {
+                // рейтинг не указан, возвращаем ошибку
+                throw new ValidationException("MPA рейтинг обязателен при создании фильма");
+            }
+            // При обновлении, если MPA отсутствует — ничего не делаем
+        } else {
+            // Если MPA указан, проверяем его существование
+            int mpaId = film.getMpa().getId();
+            film.setMpa(
+                    mpaStorage.findById(mpaId)
+                            .orElseThrow(() -> new NotFoundException("MPA с id=" + mpaId + " не найден"))
             );
         }
     }
+
+    private void checkAndSetGenres(Film film) {
+        if (film.getGenres() == null || film.getGenres().isEmpty()) {
+            return;
+        }
+
+        // LinkedHashMap сохраняет порядок добавления
+        LinkedHashMap<Integer, Genre> map = new LinkedHashMap<>();
+
+        for (Genre genre : film.getGenres()) {
+            if (genre == null) {
+                continue; // пропускаем null
+            }
+
+            int id = genre.getId();
+            // Если жанр уже добавлен, пропускаем (убираем дубликаты)
+            if (map.containsKey(id)) {
+                continue;
+            }
+
+            // Проверяем, есть ли жанр в хранилище
+            Genre validGenre = genreStorage.findById(id)
+                    .orElseThrow(() -> new GenreNotFoundException(id));
+
+            map.put(id, validGenre);
+        }
+
+        // Сохраняем уникальные жанры в порядке добавления
+        film.setGenres(new LinkedHashSet<>(map.values()));
+    }
+
+    @Override
+    public List<Film> getPopularFilms(int count) {
+        // Получаем список популярных фильмов из storage
+        List<Film> popular = filmStorage.findPopularFilms(count);
+
+        // Обогащаем жанрами и лайками
+        enrichFilms(popular);
+
+        return popular;
+    }
+
+    private Film getFilmOrThrow(int filmId) {
+        return filmStorage.findById(filmId)
+                .orElseThrow(() -> new NotFoundException("Фильм с id=" + filmId + " не найден"));
+    }
+
+    private void enrichFilms(Collection<Film> films) {
+
+        Map<Integer, Set<Genre>> genresMap = filmGenreDbStorage.getGenresForFilms(films);
+
+        Map<Integer, Set<Long>> likesMap = filmLikeDbStorage.getLikesForFilms(films);
+
+        for (Film film : films) {
+            film.setGenres(genresMap.getOrDefault(film.getId(), new HashSet<>()));
+            Set<Long> rawLikes = likesMap.getOrDefault(film.getId(), new HashSet<>());
+            Set<Integer> likesInt = rawLikes.stream()
+                    .map(Long::intValue)
+                    .collect(Collectors.toSet());
+            film.setLikes(likesInt);
+        }
+    }
 }
-// я поошибке ее уже смержил
-// не знаю правильно ли я исправил
